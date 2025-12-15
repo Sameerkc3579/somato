@@ -9,13 +9,13 @@ import { AuthProvider } from "./context/AuthContext";
 // --- COMPONENTS ---
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import MainLayout from "./components/MainLayout"; // ⬅️ NEW IMPORT
+import MainLayout from "./components/MainLayout"; 
 
 // --- PAGES ---
 import Home from "./pages/Home";
 import Delivery from "./pages/Delivery";
-import DiningOut from "./pages/DiningOut"; // Ensure this is imported
-import Nightlife from "./pages/Nightlife"; // Ensure this is imported
+import DiningOut from "./pages/DiningOut"; 
+import Nightlife from "./pages/Nightlife"; 
 import RestaurantPage from "./pages/RestaurantPage";
 import Login from "./pages/Login"; 
 import Checkout from "./pages/Checkout";     
@@ -36,15 +36,17 @@ const App = () => {
       /> 
 
       <Routes>
-        <Route path="/" element={<Navigate to="/delivery" />} />
+        {/* 🚨 FIX: Changed redirect from "/delivery" to "/home" */}
+        <Route path="/" element={<Navigate to="/home" />} />
         
         {/* 🚨 MAIN TAB ROUTES - Wrapped by MainLayout */}
         <Route path="/delivery" element={<MainLayout><Delivery searchTerm={searchTerm} city={city} /></MainLayout>} />
         <Route path="/dining-out" element={<MainLayout><DiningOut key={city} city={city} /></MainLayout>} />
         <Route path="/nightlife" element={<MainLayout><Nightlife key={city} city={city} /></MainLayout>} />
+        
+        {/* Home page Route */}
+        <Route path="/home" element={<Home city={city} setCity={setCity} />} />
         
-        {/* Home page should link to /delivery (or /home) but shouldn't be wrapped by tabs */}
-        <Route path="/home" element={<Home city={city} setCity={setCity} />} />
         {/* Other Routes (Do NOT wrap these) */}
         <Route path="/restaurant/:id" element={<RestaurantPage />} />
         <Route path="/checkout" element={<Checkout />} />
