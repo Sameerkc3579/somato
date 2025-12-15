@@ -1,52 +1,57 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // ✅ Get User Data from Context
 
-// 🚨 ACCEPT setUserOrders PROP 🚨
-const Checkout = ({ user, setUserOrders }) => { 
+const Checkout = () => { 
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ Get logged-in user info
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
 
-  // 1. Get Cart Data 
-  const cartItems = state?.cart || [];
+  // 1. Get Cart Data (Safe check if state is missing)
+  const cartItems = state?.cartItems || [];
   const restaurantName = state?.restaurantName || "Restaurant";
+  const itemTotal = state?.totalPrice || 0;
 
   // 2. Calculate Totals
-  const itemTotal = cartItems.reduce((acc, item) => acc + parseInt(item.price), 0);
   const deliveryFee = 40;
   const platformFee = 10;
   const grandTotal = itemTotal + deliveryFee + platformFee;
 
-  // 3. Handle "Place Order" Click
+  // 3. Handle "Place Order" Click (Connects to Backend)
   const handlePlaceOrder = () => {
-    setIsOrderPlaced(true);
     
-    // --- 🚨 NEW: CREATE AND SAVE ORDER TO GLOBAL STATE 🚨 ---
-    const newOrder = {
-        id: "ORD-" + Math.floor(Math.random() * 90000 + 10000), // Random ID
+    // A. Prepare Order Data
+    const orderData = {
+        items: cartItems,
+        totalAmount: grandTotal,
         restaurant: restaurantName,
-        // Format the date nicely for display
-        date: new Date().toLocaleDateString('en-IN', {
-            day: '2-digit', 
-            month: 'short', 
-            hour: '2-digit', 
-            minute: '2-digit'
-        }),
-        total: `₹${grandTotal}`,
-        status: "Confirmed",
-        items: cartItems.map(item => `${item.name} (${item.isVeg ? 'Veg' : 'Non-Veg'})`),
+        status: "Confirmed"
     };
 
-    // Update the global state, placing the new order at the beginning of the array
-    setUserOrders(prevOrders => [newOrder, ...prevOrders]);
-    // ----------------------------------------------------------------------
-
-    // Redirect to Home after 3 seconds
-    setTimeout(() => {
-      navigate("/");
-    }, 3000);
+    // B. Send to Backend API
+    fetch("http://localhost:4000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+    })
+    .then((res) => res.json())
+    .then(() => {
+        // C. Show Success Animation
+        setIsOrderPlaced(true);
+        
+        // D. Redirect after 2 seconds
+        setTimeout(() => {
+            navigate("/order-success");
+        }, 2000);
+    })
+    .catch((err) => {
+        alert("Failed to place order. Is the backend running?");
+        console.error(err);
+    });
   };
 
+  // 4. Handle Empty Cart Case
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -70,7 +75,7 @@ const Checkout = ({ user, setUserOrders }) => {
                </div>
                <h2 className="text-2xl font-bold text-gray-800 mb-2">Order Placed!</h2>
                <p className="text-gray-500 mb-6">Your food is being prepared at <span className="font-bold">{restaurantName}</span>.</p>
-               <p className="text-sm text-gray-400">Redirecting to home...</p>
+               <p className="text-sm text-gray-400">Redirecting...</p>
            </div>
         </div>
       )}
@@ -110,7 +115,7 @@ const Checkout = ({ user, setUserOrders }) => {
                    <div>
                        <h3 className="font-bold text-gray-800">{user?.name || "Guest User"}</h3>
                        <p className="text-sm text-gray-500 leading-relaxed">
-                           {user?.email || user?.phone || "No contact info available."}
+                           {user?.email || "No contact info available."}
                        </p>
                        <p className="text-sm text-gray-500 leading-relaxed">Flat 402, Lotus Apartment, Gandhi Chowk, Hajipur, Bihar - 844101</p>
                    </div>

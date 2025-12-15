@@ -1,104 +1,62 @@
+// client/src/App.jsx
+
 import React, { useState } from "react";
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-// Pages
-import Home from "./pages/Home";
-import Delivery from "./pages/Delivery";
-import DiningOut from "./pages/DiningOut";
-import Nightlife from "./pages/Nightlife";
-import RestaurantPage from "./pages/RestaurantPage";
-import Checkout from "./pages/Checkout"; 
-import UserProfile from "./pages/UserProfile"; 
-import Login from "./pages/Login"; 
-
+// --- CONTEXT ---
 import { AuthProvider } from "./context/AuthContext"; 
 
-// --- Initial hardcoded order data ---
-const initialOrders = [
-    {
-        id: "ORD-98765",
-        restaurant: "The Royal Table",
-        date: "12 Dec 2023, 08:30 PM",
-        total: "₹459",
-        status: "Delivered",
-        items: ["Farmhouse Pizza (Medium)", "Pepsi (500ml)"]
-    },
-    {
-        id: "ORD-12345",
-        restaurant: "Green Leaf Pure Veg",
-        date: "05 Nov 2023, 01:15 PM",
-        total: "₹629",
-        status: "Delivered",
-        items: ["Hot & Crispy Bucket", "French Fries"]
-    }
-];
+// --- COMPONENTS ---
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import MainLayout from "./components/MainLayout"; // ⬅️ NEW IMPORT
 
-function App() {
-    const [searchTerm, setSearchTerm] = useState("");
-    
-    // 🚨 GLOBAL CITY STATE (Source of Truth) 🚨
-    const [city, setCity] = useState("Hajipur"); 
+// --- PAGES ---
+import Home from "./pages/Home";
+import Delivery from "./pages/Delivery";
+import DiningOut from "./pages/DiningOut"; // Ensure this is imported
+import Nightlife from "./pages/Nightlife"; // Ensure this is imported
+import RestaurantPage from "./pages/RestaurantPage";
+import Login from "./pages/Login"; 
+import Checkout from "./pages/Checkout";     
+import OrderSuccess from "./pages/OrderSuccess";
+import Profile from "./pages/Profile"; 
 
-    const [user, setUser] = useState(null); 
-    const [userOrders, setUserOrders] = useState(initialOrders);
+const App = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [city, setCity] = useState("Hajipur");
 
-    // --- DEFINING AUTH FUNCTIONS ---
-    const login = (userData) => {
-        setUser(userData);
-    };
+  return (
+    <AuthProvider> 
+      
+      <Navbar 
+        setSearchTerm={setSearchTerm} 
+        city={city} 
+        setCity={setCity} 
+      /> 
 
-    const logout = () => {
-        setUser(null);
-    };
-
-    // --- PASSING FUNCTIONS TO CONTEXT ---
-    const authContextValue = {
-        user, 
-        setUser, 
-        login, 
-        logout 
-    };
-
-    return (
-        <AuthProvider value={authContextValue}> 
-            {/* 🚨 PASS CITY PROPS TO NAVBAR 🚨 */}
-            <Navbar 
-                setSearchTerm={setSearchTerm} 
-                city={city} 
-                setCity={setCity} 
-            /> 
-            
-            <Routes>
-                {/* 🚨 PASS CITY PROPS TO HOME 🚨 */}
-                <Route path="/" element={<Home city={city} setCity={setCity} />} /> 
-                
-                {/* 🚨 PASS CITY PROPS TO DELIVERY (For Filtering) 🚨 */}
-                <Route path="/delivery" element={<Delivery searchTerm={searchTerm} city={city} />} />
-                
-                <Route path="/dining" element={<DiningOut />} />
-                <Route path="/nightlife" element={<Nightlife />} />
-                
-                {/* 🚨 PASS CITY PROPS TO RESTAURANT PAGE (For Map/Address) 🚨 */}
-                <Route path="/restaurant/:id" element={<RestaurantPage city={city} />} />
-                
-                <Route path="/login" element={<Login />} />
-                
-                <Route 
-                    path="/checkout" 
-                    element={<Checkout user={user} userOrders={userOrders} setUserOrders={setUserOrders} />} 
-                />
-                
-                <Route 
-                    path="/profile" 
-                    element={<UserProfile user={user} userOrders={userOrders} setUser={setUser} />} 
-                />
-            </Routes>
-            
-            <Footer />
-        </AuthProvider>
-    );
+      <Routes>
+        <Route path="/" element={<Navigate to="/delivery" />} />
+        
+        {/* 🚨 MAIN TAB ROUTES - Wrapped by MainLayout */}
+        <Route path="/delivery" element={<MainLayout><Delivery searchTerm={searchTerm} city={city} /></MainLayout>} />
+        <Route path="/dining-out" element={<MainLayout><DiningOut key={city} city={city} /></MainLayout>} />
+        <Route path="/nightlife" element={<MainLayout><Nightlife key={city} city={city} /></MainLayout>} />
+        
+        {/* Home page should link to /delivery (or /home) but shouldn't be wrapped by tabs */}
+        <Route path="/home" element={<Home city={city} setCity={setCity} />} />
+        {/* Other Routes (Do NOT wrap these) */}
+        <Route path="/restaurant/:id" element={<RestaurantPage />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+      
+      <Footer />
+      
+    </AuthProvider>
+  );
 }
 
 export default App;

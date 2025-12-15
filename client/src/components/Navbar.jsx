@@ -35,7 +35,7 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
                 <div className="flex justify-between items-center h-16">
                     
                     {/* --- 1. Logo --- */}
-                    <Link to="/" className="flex-shrink-0">
+                    <Link to="/home" className="flex-shrink-0">
                         <h1 className="text-3xl font-extrabold text-black italic tracking-tight">
                             somato
                         </h1>

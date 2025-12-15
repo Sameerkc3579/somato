@@ -1,9 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const RestaurantCard = ({ info }) => {
+// 🚨 FIX: Accept the new currentCity prop 🚨
+const RestaurantCard = ({ info, currentCity }) => {
   return (
-    <Link to={`/restaurant/${info.id}`} state={{ restaurant: info }}>
+    <Link 
+        to={`/restaurant/${info.id}`} 
+        state={{ 
+            restaurant: info, 
+            selectedCity: currentCity // <-- CRITICAL: Pass the city context
+        }}
+    >
       <div className="bg-white rounded-2xl hover:shadow-lg transition duration-300 cursor-pointer p-3 hover:border hover:border-gray-200">
         
         <div className="relative w-full h-60 overflow-hidden rounded-2xl">
@@ -38,10 +45,6 @@ const RestaurantCard = ({ info }) => {
             <p className="truncate w-1/2">{info.cuisine}</p>
             <p>{info.price}</p>
           </div>
-          
-          {/* NEW: VISUAL FEEDBACK FOR SEARCH MATCHES (Optional) */}
-          {/* If the card was found via search, we could highlight it here if we passed the search term down. 
-              For now, this is just a clean card. */}
         </div>
       </div>
     </Link>

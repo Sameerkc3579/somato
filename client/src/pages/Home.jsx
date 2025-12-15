@@ -37,7 +37,7 @@ const Home = ({ city, setCity }) => {
       description: "View the city's favourite dining venues",
       // ✅ WORKING IMAGE URL
       cover: "https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/dining"
+      link: "/dining-out"
     },
     {
       title: "Live Events",

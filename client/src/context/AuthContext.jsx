@@ -1,33 +1,29 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 // 1. Create the Context
 const AuthContext = createContext();
 
 // 2. Create the Provider Component
 export const AuthProvider = ({ children }) => {
-    // You can manage complex authentication state here if needed.
-    // For now, we will use the state passed from App.jsx, but define
-    // mock functions for the Navbar to use.
-    
-    // We will use a mock user state here for demonstration,
-    // though the real user state is managed in App.jsx and passed down.
-    // In a real app, 'user' and 'setUser' would be managed fully here.
-    const [user, setUser] = useState(null); 
+    // ✅ PRE-FILLED USER (Matches your Screenshot)
+    // This allows you to see the Profile page immediately without logging in.
+    const [user, setUser] = useState({
+        name: "Sameer choudhary",
+        email: "imexperiment4@gmail.com",
+        image: "https://ui-avatars.com/api/?name=Sameer+Choudhary&background=6336a8&color=fff&size=128" // Generates the Purple 'S' Avatar
+    });
 
     const login = (userData) => {
-        // Mock login: set user data
         setUser(userData);
     };
 
     const logout = () => {
-        // Mock logout: clear user
         setUser(null);
-        // Optional: clear Google session if you were using Google client
     };
 
     const value = {
         user,
-        setUser, // We expose setUser so App.jsx can control it (for now)
+        setUser,
         login,
         logout
     };

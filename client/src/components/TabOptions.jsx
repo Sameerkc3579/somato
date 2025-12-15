@@ -17,7 +17,7 @@ const tabs = [
     active_img: "https://b.zmtcdn.com/data/o2_assets/30fa0a844f3ba820db50578288c26a631616149662.png",
     backdrop: "#E5F3F3",
     inactive_img: "https://b.zmtcdn.com/data/o2_assets/78d25215ff4c1299578ed36eefd5f39d1616149985.png",
-    path: "/dining"
+    path: "/dining-out"
   },
   {
     id: "Nightlife",

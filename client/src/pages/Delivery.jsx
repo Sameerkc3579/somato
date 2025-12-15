@@ -1,141 +1,121 @@
 import React, { useState, useEffect, useCallback } from "react";
-import TabOptions from "../components/TabOptions";
 import Filters from "../components/Filters";
 import RestaurantCard from "../components/RestaurantCard";
-import restaurantList from "../data/restaurants.json"; 
-import { generateNewRestaurants } from "../utils/restaurantGenerator"; 
 
-// 🚨 ACCEPT CITY PROP 🚨
-const Delivery = ({ searchTerm, city }) => {
-  const [items, setItems] = useState(restaurantList);
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeFilters, setActiveFilters] = useState([]);
+// NOTE: We assume this component receives the 'city' prop from App.jsx
+const Delivery = ({ searchTerm, city }) => { 
+  // State to hold the full list of restaurants fetched from the API for the current city
+  const [restaurants, setRestaurants] = useState([]); 
+  const [loading, setLoading] = useState(true);
+  const [activeFilters, setActiveFilters] = useState([]);
 
-  // --- Infinite Scroll Handler ---
-  const handleScroll = useCallback(() => {
-    // Stop scrolling if loading, searching, filtering, OR if looking at specific city results
-    // We don't want to generate random "Hajipur" restaurants when viewing "Mumbai"
-    if (isLoading || searchTerm.length > 0 || activeFilters.length > 0) return;
-    
-    if (
-      window.innerHeight + document.documentElement.scrollTop + 300 >=
-      document.documentElement.scrollHeight
-    ) {
-      loadMoreItems();
-    }
-  }, [isLoading, searchTerm, activeFilters]);
+  // --- API DATA FETCHING (Triggered by City Change) ---
+  const fetchRestaurants = useCallback(() => {
+    setLoading(true);
+    
+    // Fetch ALL data (since your API doesn't seem to filter by city directly)
+    fetch("http://localhost:4000/api/restaurants") 
+      .then((res) => res.json())
+      .then((data) => {
+        // 🚨 CRITICAL FIX: Frontend filtering must be case-insensitive and strictly check if r.city exists
+        const cityFilteredData = data.filter(
+            // Check if r.city exists AND matches selected city (case-insensitive)
+            (r) => r.city && r.city.toLowerCase() === city.toLowerCase()
+        );
+        
+        setRestaurants(cityFilteredData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+        setRestaurants([]); 
+      });
+  }, [city]); // CRUCIAL: Re-run when city changes
 
-  const loadMoreItems = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const newRestaurants = generateNewRestaurants(3);
-      setItems((prev) => [...prev, ...newRestaurants]);
-      setIsLoading(false);
-    }, 200); 
-  };
+  // Fetch data on initial load AND when the city changes
+  useEffect(() => {
+    fetchRestaurants();
+  }, [fetchRestaurants]);
 
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
 
-  // --- CITY & FILTER LOGIC ---
-  
-  // 1. First, determine the base list of restaurants for the selected CITY
-  let cityBasedItems = items.filter(r => r.city === city);
+  // --- Infinite Scroll Handler (Kept simple as data is fetched upfront) ---
+  const handleScroll = useCallback(() => {
+    return;
+  }, []); 
 
-  // 2. AUTO-FILL LOGIC:
-  // If no restaurants exist for this city (and it's not a search),
-  // take the existing list and "pretend" they are in the selected city.
-  if (cityBasedItems.length === 0 && !searchTerm) {
-      cityBasedItems = items.map(restaurant => ({
-          ...restaurant,
-          city: city, // Override city
-          // Simple replace to make the address look local
-          address: restaurant.address ? restaurant.address.replace("Hajipur", city).replace("Delhi NCR", city).replace("Mumbai", city) : `${city} Main Road`
-      }));
-  }
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
-  // 3. Now apply the rest of the filters (Search, Veg, Rating) on this city list
-  const filteredItems = cityBasedItems.filter((restaurant) => {
-    
-    // Search Filter
-    if (searchTerm) {
-        const lowerSearch = searchTerm.toLowerCase();
-        const nameMatch = restaurant.name.toLowerCase().includes(lowerSearch);
-        const cuisineMatch = restaurant.cuisine.toLowerCase().includes(lowerSearch);
-        const menuMatch = restaurant.menu && restaurant.menu.some((dish) => 
-            dish.name.toLowerCase().includes(lowerSearch)
-        );
-        if (!nameMatch && !cuisineMatch && !menuMatch) return false;
-    }
+  // --- FILTER LOGIC (Applied to the city-filtered data) ---
+  const filteredItems = restaurants.filter((restaurant) => {
+    
+    // 1. Search Filter
+    if (searchTerm) {
+        const lowerSearch = searchTerm.toLowerCase();
+        // Ensure fields exist before calling toLowerCase()
+        const nameMatch = restaurant.name && restaurant.name.toLowerCase().includes(lowerSearch);
+        const cuisineMatch = restaurant.cuisine && restaurant.cuisine.toLowerCase().includes(lowerSearch);
+        const menuMatch = restaurant.menu && restaurant.menu.some((dish) => 
+            dish.name && dish.name.toLowerCase().includes(lowerSearch)
+        );
+        if (!nameMatch && !cuisineMatch && !menuMatch) return false;
+    }
 
-    // Rating Filter (4.0+)
-    if (activeFilters.includes("rating")) {
-        if (parseFloat(restaurant.rating) < 4.0) return false;
-    }
+    // 2. Rating Filter (4.0+)
+    if (activeFilters.includes("rating")) {
+        if (parseFloat(restaurant.rating) < 4.0) return false;
+    }
 
-    // Pure Veg Filter
-    if (activeFilters.includes("veg")) {
-        if (restaurant.isVeg === false) return false;
-        if (restaurant.isVeg === undefined) {
-             const cuisine = restaurant.cuisine.toLowerCase();
-             const nonVegKeywords = ["chicken", "mutton", "biryani", "kebab", "burger", "non-veg"];
-             if (restaurant.menu && restaurant.menu.some(item => !item.isVeg)) return false;
-             if (nonVegKeywords.some(keyword => cuisine.includes(keyword)) && !restaurant.name.toLowerCase().includes("veg")) {
-                return false;
-             }
-        }
-    }
+    // 3. Pure Veg Filter
+    if (activeFilters.includes("veg")) {
+        if (restaurant.isVeg === false) return false;
+    }
 
-    // Specific Cuisine Filters
-    const selectedCuisines = activeFilters.filter(f => f !== "rating" && f !== "veg");
-    if (selectedCuisines.length > 0) {
-        const restaurantCuisines = restaurant.cuisine.toLowerCase();
-        const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
-        if (!hasMatch) return false;
-    }
+    // 4. Specific Cuisine Filters
+    const selectedCuisines = activeFilters.filter(f => f !== "rating" && f !== "veg");
+    if (selectedCuisines.length > 0) {
+        const restaurantCuisines = restaurant.cuisine ? restaurant.cuisine.toLowerCase() : '';
+        const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
+        if (!hasMatch) return false;
+    }
 
-    return true;
-  });
+    return true;
+  });
 
-  return (
-    <>
-      <TabOptions activeTab="Delivery" />
+  return (
+    <>
+      <div className="bg-white min-h-screen pb-20">
+        <div className="max-w-6xl mx-auto px-4 pt-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">
+            Delivery Restaurants in {city}
+          </h1>
+          
+          <Filters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
 
-      <div className="bg-white min-h-screen pb-20">
-        <div className="max-w-6xl mx-auto px-4 pt-6">
-          {/* Dynamic Header with City Name */}
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">
-            {searchTerm ? `Results for "${searchTerm}"` : `Delivery Restaurants in ${city}`}
-          </h1>
-          
-          <Filters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
-            {filteredItems.length > 0 ? (
-                filteredItems.map((restaurant) => (
-                  <RestaurantCard key={restaurant.id} info={restaurant} />
-                ))
-            ) : (
-                <div className="col-span-3 text-center py-20">
-                    <h2 className="text-2xl font-bold text-gray-400">No restaurants found 🍃</h2>
-                    <p className="text-gray-400">Try removing some filters.</p>
-                </div>
-            )}
-          </div>
-
-          {/* Loading Spinner */}
-          {isLoading && !searchTerm && activeFilters.length === 0 && (
-            <div className="p-10 text-center">
-               <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-
-        </div>
-      </div>
-    </>
-  );
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+            {loading ? (
+                <div className="col-span-3 text-center py-20">
+                    <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-gray-500 mt-2">Fetching the latest delivery options...</p>
+                </div>
+            ) : filteredItems.length > 0 ? (
+                filteredItems.map((restaurant) => (
+                    <RestaurantCard key={restaurant._id} info={restaurant} currentCity={city} /> 
+                ))
+            ) : (
+                <div className="col-span-3 text-center py-20">
+                    <h2 className="text-2xl font-bold text-gray-400">No restaurants found in {city} 😔</h2>
+                    <p className="text-gray-400">Try removing some filters or changing the city.</p>
+                </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default Delivery;
