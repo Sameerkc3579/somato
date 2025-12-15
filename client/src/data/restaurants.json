@@ -1,0 +1,119 @@
+[
+  {
+    "id": 1,
+    "name": "Pizza Hut",
+    "rating": 4.1,
+    "cuisine": "Pizza, Fast Food, Beverages",
+    "isVeg": false,
+    "address": "Shop 12, Ground Floor, City Centre Mall, Hajipur",
+    "image": "https://images.pexels.com/photos/2619967/pexels-photo-2619967.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Margherita Pizza", "price": "249", "desc": "Classic cheese pizza", "isVeg": true, "category": "Pizzas", "image": "https://images.pexels.com/photos/1049626/pexels-photo-1049626.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Pepperoni Feast", "price": "399", "desc": "Spicy pepperoni slices", "isVeg": false, "category": "Pizzas", "image": "https://images.pexels.com/photos/4109111/pexels-photo-4109111.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "KFC",
+    "rating": 3.9,
+    "cuisine": "Burger, Fast Food, Biryani",
+    "isVeg": false,
+    "address": "Main Road, Near Gandhi Chowk, Hajipur",
+    "image": "https://images.pexels.com/photos/1600727/pexels-photo-1600727.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Zinger Burger", "price": "179", "desc": "Signature chicken burger", "isVeg": false, "category": "Burgers", "image": "https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Hot & Crispy Chicken", "price": "450", "desc": "Fried chicken bucket", "isVeg": false, "category": "Chicken", "image": "https://images.pexels.com/photos/60616/fried-chicken-chicken-fried-crunchy-60616.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Domino's Pizza",
+    "rating": 4.3,
+    "cuisine": "Pizza, Italian, Pasta",
+    "isVeg": false,
+    "address": "Plot 45, Cinema Road, Hajipur",
+    "image": "https://images.pexels.com/photos/825661/pexels-photo-825661.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Farmhouse Pizza", "price": "459", "desc": "Onion, capsicum, tomato", "isVeg": true, "category": "Pizzas", "image": "https://images.pexels.com/photos/2762942/pexels-photo-2762942.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Choco Lava Cake", "price": "99", "desc": "Molten chocolate cake", "isVeg": true, "category": "Desserts", "image": "https://images.pexels.com/photos/45202/brownie-dessert-cake-sweet-45202.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Haldiram's",
+    "rating": 4.6,
+    "cuisine": "North Indian, Sweets, Street Food",
+    "isVeg": true,
+    "address": "Near Dak Bungalow Chowk, Hajipur",
+    "image": "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Raj Kachori", "price": "140", "desc": "Stuffed crispy shell", "isVeg": true, "category": "Street Food", "image": "https://images.pexels.com/photos/9609835/pexels-photo-9609835.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Paneer Butter Masala", "price": "260", "desc": "Rich tomato gravy", "isVeg": true, "category": "North Indian", "image": "https://images.pexels.com/photos/3928854/pexels-photo-3928854.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Bikaner Sweets",
+    "rating": 4.2,
+    "cuisine": "Sweets, South Indian, North Indian",
+    "isVeg": true,
+    "address": "Station Road, Hajipur",
+    "image": "https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Masala Dosa", "price": "120", "desc": "Crispy crepe with potato", "isVeg": true, "category": "South Indian", "image": "https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Rasmalai", "price": "50", "desc": "Sweet cheese dumplings", "isVeg": true, "category": "Sweets", "image": "https://images.pexels.com/photos/15891199/pexels-photo-15891199.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "The Golden Dragon",
+    "rating": 4.0,
+    "cuisine": "Chinese, Asian, Momos",
+    "isVeg": false,
+    "address": "Konhara Ghat Road, Hajipur",
+    "image": "https://images.pexels.com/photos/2611917/pexels-photo-2611917.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Hakka Noodles", "price": "180", "desc": "Stir fried noodles", "isVeg": true, "category": "Chinese", "image": "https://images.pexels.com/photos/2347311/pexels-photo-2347311.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Chicken Momos", "price": "140", "desc": "Steamed dumplings", "isVeg": false, "category": "Starters", "image": "https://images.pexels.com/photos/5409012/pexels-photo-5409012.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Biryani Mahal",
+    "rating": 3.8,
+    "cuisine": "Biryani, Mughlai, North Indian",
+    "isVeg": false,
+    "address": "Paswan Chowk, Hajipur",
+    "image": "https://images.pexels.com/photos/7394819/pexels-photo-7394819.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Chicken Biryani", "price": "220", "desc": "Aromatic rice dish", "isVeg": false, "category": "Biryani", "image": "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Mutton Korma", "price": "350", "desc": "Slow cooked meat curry", "isVeg": false, "category": "Main Course", "image": "https://images.pexels.com/photos/9609842/pexels-photo-9609842.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Burger Point",
+    "rating": 3.5,
+    "cuisine": "Fast Food, Burger, Beverages",
+    "isVeg": true,
+    "address": "Ramashish Chowk, Hajipur",
+    "image": "https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Aloo Tikki Burger", "price": "60", "desc": "Spicy potato patty", "isVeg": true, "category": "Burgers", "image": "https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Cold Coffee", "price": "80", "desc": "Chilled coffee", "isVeg": true, "category": "Beverages", "image": "https://images.pexels.com/photos/3727250/pexels-photo-3727250.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Kwality Wall's",
+    "rating": 4.5,
+    "cuisine": "Ice Cream, Desserts",
+    "isVeg": true,
+    "address": "Cinema Road, Hajipur",
+    "image": "https://images.pexels.com/photos/1362534/pexels-photo-1362534.jpeg?auto=compress&cs=tinysrgb&w=600",
+    "menu": [
+      { "name": "Magnum Choco", "price": "90", "desc": "Belgian chocolate ice cream stick", "isVeg": true, "category": "Ice Cream", "image": "https://images.pexels.com/photos/50614/pexels-photo-50614.jpeg?auto=compress&cs=tinysrgb&w=600" },
+      { "name": "Cornetto Double Chocolate", "price": "60", "desc": "Cone with chocolate disc", "isVeg": true, "category": "Ice Cream", "image": "https://images.pexels.com/photos/1362534/pexels-photo-1362534.jpeg?auto=compress&cs=tinysrgb&w=600" }
+    ]
+  }
+]
