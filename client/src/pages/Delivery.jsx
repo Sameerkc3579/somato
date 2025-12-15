@@ -14,16 +14,36 @@ const Delivery = ({ searchTerm, city }) => {
     setLoading(true);
     
     // Fetch ALL data (since your API doesn't seem to filter by city directly)
-    fetch("http://localhost:4000/api/restaurants") 
+    fetch("/api/restaurants") 
       .then((res) => res.json())
       .then((data) => {
-        // 🚨 CRITICAL FIX: Frontend filtering must be case-insensitive and strictly check if r.city exists
-        const cityFilteredData = data.filter(
-            // Check if r.city exists AND matches selected city (case-insensitive)
-            (r) => r.city && r.city.toLowerCase() === city.toLowerCase()
+        
+        const lowerSelectedCity = city.toLowerCase().trim();
+
+        // 1. Attempt a strict city match (Current strict logic)
+        let filteredList = data.filter(
+            (r) => r.city && r.city.toLowerCase().trim() === lowerSelectedCity
         );
-        
-        setRestaurants(cityFilteredData);
+
+        // 🚨 SOLUTION: Implement a fallback if the strict match fails 🚨
+        if (filteredList.length === 0 && data.length > 0) {
+            console.warn(`Strict city match failed for "${city}". Trying partial match as fallback.`);
+            
+            // 2. Fallback to partial match (e.g., "Delhi" matches "Delhi NCR")
+            filteredList = data.filter(
+                // Check if the city name in the data INCLUDES the selected city name
+                (r) => r.city && r.city.toLowerCase().includes(lowerSelectedCity)
+            );
+            
+            // 3. Final Fallback: If partial match also fails, show ALL restaurants 
+            //    (This ensures the page doesn't break, though data may be inconsistent)
+            if (filteredList.length === 0) {
+                console.warn("Partial match also failed. Showing all restaurants as final fallback.");
+                filteredList = data; 
+            }
+        }
+
+        setRestaurants(filteredList);
         setLoading(false);
       })
       .catch((err) => {

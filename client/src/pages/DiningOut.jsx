@@ -34,120 +34,137 @@ const shuffleArray = (array) => {
 };
 
 const DiningOut = ({ city }) => { 
-    const INITIAL_DISPLAY_COUNT = 9;
-    const LOAD_STEP = 6; 
-    
-    // 1. 🚨 LOGIC TO CALCULATE INITIAL STATE (Must execute before hooks) 🚨
-    // Filter the full list based on the city (case-insensitive)
-    const initialCityFilter = diningList.filter(r => 
-        r.location.toLowerCase() === city.toLowerCase()
-    );
-    
-    // Determine the list to use (city-filtered or generic fallback)
-    let initialList = initialCityFilter.length > 0 ? initialCityFilter : diningList;
-    
-    // Apply shuffle to the determined list to randomize initial order
-    initialList = shuffleArray(initialList); 
-    
-    // 2. 🚨 ALL useState HOOKS MUST BE AT THE TOP 🚨
-    const [cityFilteredList, setCityFilteredList] = useState(initialList);
-    const [displayedDiningItems, setDisplayedDiningItems] = useState(initialList.slice(0, INITIAL_DISPLAY_COUNT)); 
-    const [activeFilters, setActiveFilters] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    
-    
-    // --- Filter the list based on active filters (now filtering cityFilteredList) ---
-    // This is calculated on every render based on the current state.
-    const filteredItems = cityFilteredList.filter((restaurant) => { 
-        if (activeFilters.includes("tableBooking") && !restaurant.hasBooking) { return false; }
-        if (activeFilters.includes("outdoorSeating") && !restaurant.hasOutdoor) { return false; }
-        if (activeFilters.includes("buffet") && !restaurant.servesBuffet) { return false; }
-        if (activeFilters.includes("pureVeg") && !restaurant.isDiningVeg) { return false; }
+    const INITIAL_DISPLAY_COUNT = 9;
+    const LOAD_STEP = 6; 
+    
+    // 1. 🚨 KEEP STATE DEFINITIONS AT THE TOP 🚨
+    // Initialize state with an empty list, ready to be populated by useEffect
+    const [cityFilteredList, setCityFilteredList] = useState([]); 
+    const [displayedDiningItems, setDisplayedDiningItems] = useState([]); 
+    const [activeFilters, setActiveFilters] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    
+    // --- 🚨 NEW: EFFECT TO HANDLE CITY CHANGE (Filter and Shuffle) 🚨 ---
+    const filterAndShuffleList = useCallback(() => {
+        // Filter the full list based on the city (case-insensitive)
+        const initialCityFilter = diningList.filter(r => 
+            r.location.toLowerCase() === city.toLowerCase()
+        );
         
-        const selectedCuisines = activeFilters.filter(f => !["tableBooking", "outdoorSeating", "buffet", "pureVeg"].includes(f));
+        // Determine the list to use (city-filtered or generic fallback)
+        let newFilteredList = initialCityFilter.length > 0 ? initialCityFilter : diningList;
         
-        if (selectedCuisines.length > 0) {
-            const restaurantCuisines = restaurant.cuisine.toLowerCase();
-            const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
-            if (!hasMatch) return false;
-        }
-
-        return true;
-    });
-
-    // --- SCROLL / LOAD LOGIC ---
+        // Apply shuffle to the determined list to randomize initial order
+        newFilteredList = shuffleArray(newFilteredList); 
+        
+        // Set the new list and reset the displayed items
+        setCityFilteredList(newFilteredList);
+        setDisplayedDiningItems(newFilteredList.slice(0, INITIAL_DISPLAY_COUNT));
+        setActiveFilters([]); // Optionally reset filters when city changes
+    }, [city]); // This effect runs every time the 'city' prop changes
     
-    const loadMoreItems = () => {
-        setIsLoading(true);
-        const currentCount = displayedDiningItems.length;
-        // Use the next batch from the filtered list (which is based on the shuffled list)
-        const nextBatch = filteredItems.slice(currentCount, currentCount + LOAD_STEP);
-
-        setTimeout(() => {
-            setDisplayedDiningItems(prev => [...prev, ...nextBatch]);
-            setIsLoading(false);
-        }, 300);
-    };
-
-    const handleScroll = useCallback(() => {
-        if (isLoading || displayedDiningItems.length >= filteredItems.length) return;
-        
-        if (
-            window.innerHeight + document.documentElement.scrollTop + 300 >=
-            document.documentElement.scrollHeight
-        ) {
-            loadMoreItems();
-        }
-    }, [isLoading, filteredItems.length, displayedDiningItems.length]);
-
     useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [handleScroll]);
+        filterAndShuffleList();
+    }, [filterAndShuffleList]);
+    
+    
+    // --- Filter the list based on active filters (calculated from current state) ---
+    const filteredItems = cityFilteredList.filter((restaurant) => { 
+        if (activeFilters.includes("tableBooking") && !restaurant.hasBooking) { return false; }
+        if (activeFilters.includes("outdoorSeating") && !restaurant.hasOutdoor) { return false; }
+        if (activeFilters.includes("buffet") && !restaurant.servesBuffet) { return false; }
+        if (activeFilters.includes("pureVeg") && !restaurant.isDiningVeg) { return false; }
+        
+        const selectedCuisines = activeFilters.filter(f => !["tableBooking", "outdoorSeating", "buffet", "pureVeg"].includes(f));
+        
+        if (selectedCuisines.length > 0) {
+            // Safety check: ensure cuisine exists before calling toLowerCase
+            const restaurantCuisines = restaurant.cuisine ? restaurant.cuisine.toLowerCase() : '';
+            const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
+            if (!hasMatch) return false;
+        }
 
-    // --- Filter Reset Logic (Crucial for infinite scroll) ---
-    useEffect(() => {
-        // When filters change, reset the displayed list to the initial slice of the currently filtered items
-        setDisplayedDiningItems(filteredItems.slice(0, INITIAL_DISPLAY_COUNT));
-    }, [activeFilters]);
-    
-    
-    return (
-        <>
-            <div className="bg-white min-h-screen pb-20">
-                <div className="max-w-6xl mx-auto px-4 pt-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-6">
-                        Dining Out Restaurants in {city}
-                    </h1>
-                    
-                    <DiningFilters 
-                        activeFilters={activeFilters} 
-                        setActiveFilters={setActiveFilters} 
-                    />
+        return true;
+    });
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
-                        {displayedDiningItems.length > 0 ? (
-                            displayedDiningItems.map((restaurant) => (
-                                <RestaurantCard key={restaurant.id} info={restaurant} />
-                            ))
-                        ) : (
-                            <div className="col-span-3 text-center py-20">
-                                <h2 className="text-2xl font-bold text-gray-400">No dining places found in {city} 😔</h2>
-                                <p className="text-gray-400">Try adjusting your city or filters.</p>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* Loading Spinner */}
-                    {isLoading && (
-                        <div className="p-10 text-center">
-                            <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </>
-    );
+    // --- SCROLL / LOAD LOGIC ---
+    
+    const loadMoreItems = () => {
+        setIsLoading(true);
+        const currentCount = displayedDiningItems.length;
+        // Use the next batch from the filtered list 
+        const nextBatch = filteredItems.slice(currentCount, currentCount + LOAD_STEP);
+
+        setTimeout(() => {
+            setDisplayedDiningItems(prev => [...prev, ...nextBatch]);
+            setIsLoading(false);
+        }, 300);
+    };
+
+    const handleScroll = useCallback(() => {
+        if (isLoading || displayedDiningItems.length >= filteredItems.length) return;
+        
+        if (
+            window.innerHeight + document.documentElement.scrollTop + 300 >=
+            document.documentElement.scrollHeight
+        ) {
+            loadMoreItems();
+        }
+    }, [isLoading, filteredItems.length, displayedDiningItems.length]);
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [handleScroll]);
+
+    // --- Filter Reset Logic (Crucial for infinite scroll) ---
+    useEffect(() => {
+        // When filters change, reset the displayed list to the initial slice of the currently filtered items
+        setDisplayedDiningItems(filteredItems.slice(0, INITIAL_DISPLAY_COUNT));
+    }, [activeFilters, cityFilteredList]); // Added cityFilteredList to dependencies to ensure reset after city change
+    
+    
+    return (
+        <>
+            <div className="bg-white min-h-screen pb-20">
+                <div className="max-w-6xl mx-auto px-4 pt-6">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6">
+                        Dining Out Restaurants in {city}
+                    </h1>
+                    
+                    <DiningFilters 
+                        activeFilters={activeFilters} 
+                        setActiveFilters={setActiveFilters} 
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+                        {displayedDiningItems.length > 0 ? (
+                            displayedDiningItems.map((restaurant) => (
+                                <RestaurantCard 
+                                    key={restaurant.id} 
+                                    info={restaurant} 
+                                    currentCity={city} 
+                                />
+                            ))
+                        ) : (
+                            <div className="col-span-3 text-center py-20">
+                                <h2 className="text-2xl font-bold text-gray-400">No dining places found in {city} 😔</h2>
+                                <p className="text-gray-400">Try adjusting your city or filters.</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Loading Spinner */}
+                    {isLoading && (
+                        <div className="p-10 text-center">
+                            <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
 };
 
 export default DiningOut;

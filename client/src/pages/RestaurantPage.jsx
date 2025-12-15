@@ -79,7 +79,7 @@ const RestaurantPage = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:4000/api/restaurants/${id}`)
+    fetch("/api/restaurants")
       .then((res) => res.json())
       .then((data) => {
         // 🚨 FIX: Pass selectedCity into the helper function 🚨
