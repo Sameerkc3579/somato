@@ -19,7 +19,7 @@ const Profile = () => {
 
   // --- 3. FETCH ORDERS FROM DATABASE 🔌 ---
   useEffect(() => {
-    fetch("http://localhost:4000/api/orders")
+    fetch("/api/orders")
       .then((res) => res.json())
       .then((data) => {
         setOrders(data);
