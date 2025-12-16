@@ -30,7 +30,7 @@ const Checkout = () => {
     };
 
     // B. Send to Backend API
-    fetch("http://localhost:4000/api/orders", {
+    fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData)
