@@ -74,6 +74,16 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
+// 3.5 GET ORDER HISTORY (This was missing!)
+app.get("/api/orders", async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ date: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // 4. SEED ROUTE (Full Data)
 app.get("/api/seed", async (req, res) => {
   try {
