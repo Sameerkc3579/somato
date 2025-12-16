@@ -69,7 +69,7 @@ const Home = ({ city, setCity }) => {
       title: "Nightlife",
       description: "Explore the city's top nightlife outlets",
       cover: "https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/collections/events" // Direct link to events collection
+      link: "/delivery?filter=Nightlife" // Direct link to events collection
     }
   ];
 
