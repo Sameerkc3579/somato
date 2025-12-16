@@ -302,41 +302,44 @@ app.get("/api/fix-data", async (req, res) => {
     res.status(500).send("Error updating data: " + error.message);
   }
 });
-// --- SUPER DEBUG & FIX ROUTE ---
+// --- NUCLEAR FIX ROUTE ---
 app.get("/api/fix-data", async (req, res) => {
   try {
-    // 1. Count how many Veggie places currently exist
-    const countBefore = await Restaurant.countDocuments({ isVeg: true });
+    // 1. Get ALL restaurants
+    const allRestaurants = await Restaurant.find();
 
-    // 2. FORCE UPDATE: Set 'isVeg: true' for all restaurants with "Paneer", "Veg", "Indian", or "Pizza" in cuisine
-    // This uses updateMany which bypasses some strict schema checks if they are still stuck
-    const updateResult = await Restaurant.updateMany(
-      { 
-        $or: [
-            { cuisine: { $regex: "Veg", $options: "i" } },
-            { cuisine: { $regex: "Indian", $options: "i" } },
-            { cuisine: { $regex: "Pizza", $options: "i" } },
-            { cuisine: { $regex: "Fast Food", $options: "i" } }
-        ]
-      },
-      { $set: { isVeg: true } }
-    );
+    if (allRestaurants.length === 0) return res.send("No restaurants found in DB!");
 
-    // 3. FORCE UPDATE: Set 'Nightlife' for Bars
-    await Restaurant.updateMany(
-      { cuisine: { $regex: "Bar", $options: "i" } },
-      { $set: { isVeg: false } } // Ensure Bars are not marked as Veg unless specified
-    );
+    let count = 0;
+    
+    // 2. Loop through them and FORCE updates
+    for (const r of allRestaurants) {
+      let changed = false;
 
-    // 4. Count again to see if it worked
-    const countAfter = await Restaurant.countDocuments({ isVeg: true });
+      // Force logic: If cuisine has "Veg", "Paneer", "Pizza", "Indian" -> Make it Veg
+      if (r.cuisine.match(/Veg|Paneer|Pizza|Indian|Fast Food/i)) {
+        r.isVeg = true;
+        changed = true;
+      }
 
-    res.json({
-      message: "Fix Run Complete",
-      veggie_places_before: countBefore,
-      veggie_places_after: countAfter,
-      modified_documents: updateResult.modifiedCount,
-      note: "If 'after' is greater than 0, your database is fixed!"
+      // Force logic: If cuisine has "Bar" or "Pub" -> Make it Nightlife (Not Veg)
+      if (r.cuisine.match(/Bar|Pub|Drinks/i)) {
+        r.isVeg = false;
+        // Ensure "Bar" is in the cuisine text for the filter to catch it
+        if (!r.cuisine.includes("Bar")) r.cuisine += ", Bar";
+        changed = true;
+      }
+
+      if (changed) {
+        await r.save(); // Save individual document
+        count++;
+      }
+    }
+
+    res.json({ 
+      message: "Scanned all restaurants", 
+      updated_count: count,
+      total_found: allRestaurants.length
     });
 
   } catch (error) {
