@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 
 // --- IMPORT MODELS ---
-// Ensure these files exist in api/models/
 const Restaurant = require("./models/Restaurant"); 
 const Order = require("./models/Order"); 
 
@@ -74,7 +73,7 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// 3.5 GET ORDER HISTORY (This was missing!)
+// 3.5 GET ORDER HISTORY
 app.get("/api/orders", async (req, res) => {
   try {
     const orders = await Order.find().sort({ date: -1 });
@@ -84,52 +83,30 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-// 3.5 GET COLLECTIONS (New Filter Route)
+// 3.5 GET COLLECTIONS (FINAL CORRECT VERSION with City Filter)
 app.get("/api/collections/:type", async (req, res) => {
   try {
     const { type } = req.params;
-    let query = {};
+    // 🚨 NEW: Get city from query string (e.g., ?city=Patna)
+    const { city } = req.query; 
+    
+    // Base query filters by city if a city is provided
+    let query = city ? { city: city } : {}; 
 
     if (type === "trending") {
-      // Logic: Rating 4.0 or higher
-      query = { rating: { $gte: 4.0 } };
+      // Rating 4.0+ AND the selected city
+      query = { ...query, rating: { $gte: 4.0 } };
     } else if (type === "veggie") {
-      // Logic: Only vegetarian
-      query = { isVeg: true };
+      // Strictly vegetarian places AND the selected city
+      query = { ...query, isVeg: true };
     } else if (type === "new") {
-      // Logic: Just show the most recently added (sorted by ID)
-      const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
+      // Sort by newest created AND the selected city
+      const results = await Restaurant.find(query).sort({ _id: -1 }).limit(10);
       return res.json(results);
     } else if (type === "events") {
-      // Logic: High rating & Expensive (simulating "Events/Premium")
-      query = { rating: { $gte: 4.5 } };
-    }
-
-    const results = await Restaurant.find(query);
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-// 3.5 GET COLLECTIONS (Updated for Nightlife & Counts)
-app.get("/api/collections/:type", async (req, res) => {
-  try {
-    const { type } = req.params;
-    let query = {};
-
-    if (type === "trending") {
-      // Rating 4.0+ counts as trending
-      query = { rating: { $gte: 4.0 } };
-    } else if (type === "veggie") {
-      // Strictly vegetarian places
-      query = { isVeg: true };
-    } else if (type === "new") {
-      // Sort by newest created
-      const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
-      return res.json(results);
-    } else if (type === "events") {
-      // "Nightlife" -> Look for Bar, Pub, or specific cuisines
+      // "Nightlife" -> Look for Bar, Pub, or specific cuisines AND the selected city
       query = { 
+        ...query,
         $or: [
           { cuisine: { $regex: "Bar", $options: "i" } },
           { cuisine: { $regex: "Pub", $options: "i" } },
@@ -137,7 +114,8 @@ app.get("/api/collections/:type", async (req, res) => {
         ]
       };
     }
-
+    // Note: The redundant logic from your previous code has been removed.
+    // The query is built once and executed once.
     const results = await Restaurant.find(query);
     res.json(results);
   } catch (error) {
@@ -145,7 +123,7 @@ app.get("/api/collections/:type", async (req, res) => {
   }
 });
 
-// 4. SEED ROUTE (Full Data)
+// 4. SEED ROUTE (Full Data) - Kept as is
 app.get("/api/seed", async (req, res) => {
   try {
     const baseData = {
@@ -195,8 +173,8 @@ app.get("/api/seed", async (req, res) => {
         { name: "Eat On", cuisine: "Biryani, Rolls", price: "₹250 for one", image: "https://images.pexels.com/photos/461198/pexels-photo-461198.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false }
       ],
       "Gorakhpur": [
-         { name: "Bobis Restaurant", cuisine: "North Indian", price: "₹350 for one", image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false },
-         { name: "Royal Darbar", cuisine: "Mughlai", price: "₹500 for one", image: "https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false }
+          { name: "Bobis Restaurant", cuisine: "North Indian", price: "₹350 for one", image: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false },
+          { name: "Royal Darbar", cuisine: "Mughlai", price: "₹500 for one", image: "https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false }
       ],
       "Visakhapatnam": [
         { name: "Daspalla Executive Court", cuisine: "Andhra, North Indian", price: "₹700 for one", image: "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg?auto=compress&cs=tinysrgb&w=600", isVeg: false },
@@ -235,27 +213,27 @@ app.get("/api/seed", async (req, res) => {
 
     // Fill data if city is missing in baseData
     allCities.forEach(city => {
-       const cityBase = baseData[city] || genericRestaurants; 
-       for (let i = 0; i < 50; i++) {
-         const base = cityBase[i % cityBase.length];
-         const location = locations[i % locations.length];
-         finalData.push({
-           name: `${base.name} ${i > 5 ? `(${location})` : ""}`,
-           city: city,
-           address: `${location}, ${city}`,
-           cuisine: base.cuisine,
-           rating: (3.5 + Math.random() * 1.5).toFixed(1),
-           price: base.price,
-           image: base.image,
-           isVeg: base.isVeg,
-           menu: [
+        const cityBase = baseData[city] || genericRestaurants; 
+        for (let i = 0; i < 50; i++) {
+          const base = cityBase[i % cityBase.length];
+          const location = locations[i % locations.length];
+          finalData.push({
+            name: `${base.name} ${i > 5 ? `(${location})` : ""}`,
+            city: city,
+            address: `${location}, ${city}`,
+            cuisine: base.cuisine,
+            rating: (3.5 + Math.random() * 1.5).toFixed(1),
+            price: base.price,
+            image: base.image,
+            isVeg: base.isVeg,
+            menu: [
               { name: "Special Thali", price: "250", desc: "Chef's special platter", isVeg: true },
               { name: "Paneer Butter Masala", price: "220", desc: "Rich creamy gravy", isVeg: true },
               { name: "Chicken Biryani", price: "300", desc: "Aromatic rice dish", isVeg: false },
               { name: "Chocolate Brownie", price: "120", desc: "Dessert", isVeg: true }
-           ]
-         });
-       }
+            ]
+          });
+        }
     });
 
     // Shuffle Data
@@ -302,6 +280,7 @@ app.get("/api/fix-data", async (req, res) => {
     res.status(500).send("Error updating data: " + error.message);
   }
 });
+
 // --- BRUTE FORCE VEGGIE FIX ---
 app.get("/api/force-veggie", async (req, res) => {
   try {
