@@ -8,7 +8,7 @@ const nightlifeList = [
     { id: 30, name: "The Irish House", rating: 4.4, cuisine: "Pub, Finger Food", price: "₹2500 for two", image: "https://images.pexels.com/photos/176378/pexels-photo-176378.jpeg?auto=compress&cs=tinysrgb&w=600", servesCocktails: true, hasLiveMusic: true, hasOutdoor: false, hasHappyHour: true, type: "Pub", location: "Patna" },
     { id: 31, name: "Brewmaster's Heaven", rating: 4.6, cuisine: "Microbrewery, German", price: "₹2200 for two", image: "https://images.pexels.com/photos/158651/pexels-photo-158651.jpeg?auto=compress&cs=tinysrgb&w=600", servesCocktails: false, hasLiveMusic: false, hasOutdoor: true, hasHappyHour: true, type: "Microbrewery", location: "Patna" },
     { id: 32, name: "The Electric Lounge", rating: 3.9, cuisine: "Lounge, Italian", price: "₹3000 for two", image: "https://tse3.mm.bing.net/th/id/OIP.dbeGnjBA2XQPmtR5iaGmKwHaE8?cb=ucfimg2&ucfimg=1&w=1200&h=800&rs=1&pid=ImgDetMain&o=7&rm=3", servesCocktails: true, hasLiveMusic: true, hasOutdoor: false, hasHappyHour: false, type: "Lounge", location: "Patna" },
-    { id: 33, name: "Club Zenith", rating: 4.1, cuisine: "Club, Global", price: "₹3500 for two", image: "https://images.pexels.com/photos/2087532/pexels-photo-2087532.jpeg?auto=compress&cs=tinysrgb&w=600", servesCocktails: true, hasLiveMusic: false, hasOutdoor: false, hasHappyHour: false, type: "Club", location: "Patna" },
+    { id: 33, name: "Club Zenith", rating: 4.1, cuisine: "Club, Global", price: "₹3500 for two", image: "https://images.pexels.com/photos/2087532/pexels-photo-2087532.jpeg?auto=compress&cs=tinysrgb&w=600", servesCockails: true, hasLiveMusic: false, hasOutdoor: false, hasHappyHour: false, type: "Club", location: "Patna" },
     { id: 34, name: "Hajipur Brew Co.", rating: 4.0, cuisine: "Brewery, American", price: "₹2000 for two", image: "https://images.pexels.com/photos/3482706/pexels-photo-3482706.jpeg?auto=compress&cs=tinysrgb&w=600", servesCocktails: true, hasLiveMusic: true, hasOutdoor: true, hasHappyHour: true, type: "Brewery", location: "Hajipur" },
     { id: 35, name: "Skyline Bar", rating: 4.8, cuisine: "Lounge, Asian", price: "₹4000 for two", image: "https://images.pexels.com/photos/2263054/pexels-photo-2263054.jpeg?auto=compress&cs=tinysrgb&w=600", servesCocktails: true, hasLiveMusic: true, hasOutdoor: true, hasHappyHour: false, type: "Lounge", location: "Patna" },
 
@@ -63,15 +63,13 @@ const shuffleArray = (array) => {
     return shuffled;
 };
 
-// 🚨 Ensure the component accepts the 'city' prop 🚨
 const Nightlife = ({ city }) => { 
     const INITIAL_LOAD_COUNT = 6;
     const LOAD_STEP = 6; 
     
-    // 1. 🚨 LOGIC TO CALCULATE INITIAL STATE 🚨
+    // 1. LOGIC TO CALCULATE INITIAL STATE
     
     // Filter the full list based on the city (case-insensitive)
-    // NOTE: This uses strict matching on the simulated 'location' property
     const initialCityFilter = nightlifeList.filter(r => 
         r.location.toLowerCase() === city.toLowerCase()
     );
@@ -82,7 +80,7 @@ const Nightlife = ({ city }) => {
     // Apply shuffle to the determined list to randomize initial order
     initialList = shuffleArray(initialList); 
 
-    // 2. 🚨 ALL useState HOOKS MUST BE AT THE TOP 🚨
+    // 2. ALL useState HOOKS MUST BE AT THE TOP
     const [cityFilteredList, setCityFilteredList] = useState(initialList);
     const [activeFilters, setActiveFilters] = useState([]);
     const [displayedNightlifeItems, setDisplayedNightlifeItems] = useState(initialList.slice(0, INITIAL_LOAD_COUNT));
@@ -108,25 +106,29 @@ const Nightlife = ({ city }) => {
         return true;
     });
     
+    // Calculate outside of the component body to be used in useCallback dependency
     const hasMoreToLoad = displayedNightlifeItems.length < filteredItems.length;
 
 
     // --- INFINITE SCROLL HANDLER (Using the reliable logic) ---
     
-    const loadMoreItems = () => {
+    const loadMoreItems = useCallback(() => { // 🚨 WRAPPED IN USECALLBACK
+        if (isLoading || !hasMoreToLoad) return; // Add checks here too
+        
         setIsLoading(true);
         const currentCount = displayedNightlifeItems.length;
+        
+        // 🚨 IMPORTANT: Slice from the fully filtered list 🚨
         const nextBatch = filteredItems.slice(currentCount, currentCount + LOAD_STEP);
 
         setTimeout(() => {
             setDisplayedNightlifeItems(prev => [...prev, ...nextBatch]);
             setIsLoading(false);
         }, 300); // Simulate network delay
-    };
+    }, [displayedNightlifeItems.length, filteredItems.length, isLoading, hasMoreToLoad]); // 🚨 CRITICAL: Include dependencies
 
     const handleScroll = useCallback(() => {
-        if (!hasMoreToLoad || isLoading) return; 
-        
+        // Simplified check: relies on loadMoreItems to handle checks
         const scrollThreshold = 300; 
         
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -136,7 +138,7 @@ const Nightlife = ({ city }) => {
         if (isNearBottom) {
             loadMoreItems();
         }
-    }, [hasMoreToLoad, isLoading]); // Removed length dependencies since they are captured by hasMoreToLoad
+    }, [loadMoreItems]); // 🚨 CRITICAL: Depends on loadMoreItems
 
     // --- SET UP SCROLL LISTENER ---
     useEffect(() => {
@@ -149,7 +151,7 @@ const Nightlife = ({ city }) => {
     useEffect(() => {
         // When filters change, reset the displayed list to the initial slice of the currently filtered items
         setDisplayedNightlifeItems(filteredItems.slice(0, INITIAL_LOAD_COUNT));
-    }, [activeFilters]); 
+    }, [activeFilters, filteredItems]); // 🚨 CRITICAL: Added filteredItems to dependency array
 
     return (
         <>
@@ -168,11 +170,11 @@ const Nightlife = ({ city }) => {
                         {displayedNightlifeItems.length > 0 ? (
                             displayedNightlifeItems.map((spot) => (
                                 <RestaurantCard 
-                                    key={spot.id} 
-                                    info={spot} 
-                                    // 🚨 FIX: Pass the city prop here 🚨
-                                    currentCity={city} 
-                                />
+                                    key={spot.id} 
+                                    info={spot} 
+                                    // FIX: Pass the city prop here
+                                    currentCity={city} 
+                                />
                             ))
                         ) : (
                             <div className="col-span-3 text-center py-20">
@@ -189,6 +191,13 @@ const Nightlife = ({ city }) => {
                             <p className="text-sm text-gray-500 mt-2">Mixing another round of recommendations...</p>
                         </div>
                     )}
+                    
+                    {/* Fallback to show items if no loading, but not enough to trigger scroll */}
+                    {displayedNightlifeItems.length > 0 && !hasMoreToLoad && !isLoading && (
+                        <div className="p-10 text-center text-gray-400 text-sm">
+                            🎉 You've reached the end of the list for {city}!
+                        </div>
+                    )}
                 </div>
             </div>
         </>
