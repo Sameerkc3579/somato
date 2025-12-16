@@ -17,8 +17,8 @@ const restaurantSchema = new mongoose.Schema({
   rating: { type: Number, default: 4.0 },
   price: { type: String },
   image: { type: String, required: true },
-  isVeg: { type: Boolean, default: false }, // We explicitly define it
+  isVeg: { type: Boolean, default: false }, // Allows Veggie tag
   menu: [menuItemSchema]
-}, { strict: false }); // <--- THIS ALLOWS NEW FIELDS TO BE SAVED
+}, { strict: false }); // <--- IMPORTANT: Allows 'Bar' and other tags to stick
 
 module.exports = mongoose.model("Restaurant", restaurantSchema);
