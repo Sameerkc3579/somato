@@ -111,6 +111,39 @@ app.get("/api/collections/:type", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// 3.5 GET COLLECTIONS (Updated for Nightlife & Counts)
+app.get("/api/collections/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    let query = {};
+
+    if (type === "trending") {
+      // Rating 4.0+ counts as trending
+      query = { rating: { $gte: 4.0 } };
+    } else if (type === "veggie") {
+      // Strictly vegetarian places
+      query = { isVeg: true };
+    } else if (type === "new") {
+      // Sort by newest created
+      const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
+      return res.json(results);
+    } else if (type === "events") {
+      // "Nightlife" -> Look for Bar, Pub, or specific cuisines
+      query = { 
+        $or: [
+          { cuisine: { $regex: "Bar", $options: "i" } },
+          { cuisine: { $regex: "Pub", $options: "i" } },
+          { cuisine: { $regex: "Drinks", $options: "i" } }
+        ]
+      };
+    }
+
+    const results = await Restaurant.find(query);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // 4. SEED ROUTE (Full Data)
 app.get("/api/seed", async (req, res) => {
@@ -239,6 +272,34 @@ app.get("/api/seed", async (req, res) => {
   } catch (error) {
     console.error("Seed Error:", error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// --- TEMPORARY: DATA FIXER ROUTE ---
+app.get("/api/fix-data", async (req, res) => {
+  try {
+    const restaurants = await Restaurant.find();
+    
+    for (const r of restaurants) {
+      // 1. Give random rating between 3.5 and 5.0
+      r.rating = (Math.random() * (5.0 - 3.5) + 3.5).toFixed(1);
+
+      // 2. Make 30% of restaurants Vegetarian
+      r.isVeg = Math.random() < 0.3; 
+
+      // 3. Make 10% of restaurants "Nightlife" (Bar/Pub)
+      if (Math.random() < 0.1) {
+        if (!r.cuisine.includes("Bar")) {
+            r.cuisine = r.cuisine + ", Bar, Pub";
+        }
+      }
+      
+      await r.save();
+    }
+    
+    res.send(`Success! Updated ${restaurants.length} restaurants with new tags.`);
+  } catch (error) {
+    res.status(500).send("Error updating data: " + error.message);
   }
 });
 

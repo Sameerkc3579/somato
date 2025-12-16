@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-// --- BIG LIST OF CITIES (For the Hero Dropdown) ---
+// --- BIG LIST OF CITIES ---
 const cities = [
   "Hajipur", "Patna", "Delhi NCR", "Mumbai", "Bengaluru", "Pune", "Hyderabad", 
   "Chennai", "Kolkata", "Ahmedabad", "Chandigarh", "Jaipur", "Lucknow", "Indore", 
@@ -11,10 +11,35 @@ const cities = [
   "Surat", "Varanasi", "Bhopal", "Srinagar", "Raipur", "Gorakhpur"
 ];
 
-// 🚨 ACCEPT PROPS (city, setCity) 🚨
 const Home = ({ city, setCity }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [counts, setCounts] = useState({ trending: 0, events: 0, new: 0, veggie: 0 });
   const navigate = useNavigate();
+
+  // --- FETCH REAL COUNTS FOR COLLECTIONS ---
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [trending, events, newPlaces, veggie] = await Promise.all([
+          fetch("/api/collections/trending").then(res => res.json()),
+          fetch("/api/collections/events").then(res => res.json()),
+          fetch("/api/collections/new").then(res => res.json()),
+          fetch("/api/collections/veggie").then(res => res.json())
+        ]);
+        
+        setCounts({
+          trending: trending.length || 0,
+          events: events.length || 0,
+          new: newPlaces.length || 0,
+          veggie: veggie.length || 0
+        });
+      } catch (error) {
+        console.error("Failed to fetch collection counts", error);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -23,7 +48,6 @@ const Home = ({ city, setCity }) => {
     }
   };
 
-  // --- 🚨 FIXED CARDS DATA (Replaces CategoryCard) 🚨 ---
   const cards = [
     {
       title: "Order Online",
@@ -35,13 +59,13 @@ const Home = ({ city, setCity }) => {
       title: "Dining",
       description: "View the city's favourite dining venues",
       cover: "https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/dining-out" // Note: Ensure you have a route for this or redirect to delivery
+      link: "/dining-out"
     },
     {
-      title: "Live Events",
-      description: "Discover India's best events & concerts",
+      title: "Nightlife",
+      description: "Explore the city's top nightlife outlets",
       cover: "https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/nightlife" // Note: Ensure you have a route for this or redirect to delivery
+      link: "/collections/events" // Direct link to events collection
     }
   ];
 
@@ -49,7 +73,6 @@ const Home = ({ city, setCity }) => {
     <div className="pb-20">
       {/* --- HERO SECTION --- */}
       <section className="relative w-full h-[500px]">
-        {/* Background Image */}
         <img
           src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2000&q=80"
           alt="Background"
@@ -65,12 +88,10 @@ const Home = ({ city, setCity }) => {
             Discover the best food & drinks in <span className="font-bold">{city}</span>
           </p>
 
-          {/* --- SEARCH BAR --- */}
           <form 
             onSubmit={handleSearch} 
             className="bg-white p-3 rounded-xl flex flex-col md:flex-row items-center w-full max-w-2xl shadow-lg text-black"
           >
-              {/* CITY DROPDOWN */}
               <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r border-gray-300 pb-2 md:pb-0 md:pr-4 w-full md:w-1/3 mb-2 md:mb-0">
                   <span className="text-zomatoRed text-2xl">📍</span>
                   <select 
@@ -84,7 +105,6 @@ const Home = ({ city, setCity }) => {
                   </select>
               </div>
 
-              {/* SEARCH INPUT */}
               <div className="flex items-center gap-2 md:pl-4 w-full md:w-2/3">
                   <span className="text-gray-400 text-xl">🔍</span>
                   <input 
@@ -99,7 +119,7 @@ const Home = ({ city, setCity }) => {
         </div>
       </section>
 
-      {/* --- 🚨 FIXED CATEGORY CARDS SECTION 🚨 --- */}
+      {/* --- CATEGORY CARDS SECTION --- */}
       <div className="max-w-6xl mx-auto px-4 mt-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            {cards.map((card, index) => (
@@ -122,12 +142,12 @@ const Home = ({ city, setCity }) => {
         </div>
       </div>
 
-      {/* --- 🚨 COLLECTIONS SECTION (Integrated Directly) 🚨 --- */}
+      {/* --- COLLECTIONS SECTION --- */}
       <div className="max-w-6xl mx-auto px-4 mt-16 mb-10">
         <h2 className="text-3xl font-bold text-gray-800">Collections</h2>
         <div className="flex justify-between items-end mb-6">
           <p className="text-gray-500 text-lg">
-            Explore curated lists of top restaurants, cafes, pubs, and bars in your city, based on trends
+            Explore curated lists of top restaurants, cafes, pubs, and bars in {city}, based on trends
           </p>
           <span className="text-zomatoRed text-sm cursor-pointer hover:underline hidden md:block">
             All collections in {city} ▶
@@ -136,61 +156,60 @@ const Home = ({ city, setCity }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             
-            {/* CARD 1: Trending */}
+            {/* 1. Trending (High Rating) */}
             <Link to="/collections/trending" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
                 <img 
-                  src="https://b.zmtcdn.com/data/collections/684397cd092de8a3631e121ca977bc47_1674241263.jpg" 
+                  src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" 
                   alt="Trending"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                 />
                 <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
                     <h3 className="text-white text-xl font-bold">Top Trending Spots</h3>
-                    <p className="text-white text-sm">29 Places ▶</p>
+                    <p className="text-white text-sm">{counts.trending} Places ▶</p>
                 </div>
             </Link>
 
-            {/* CARD 2: Events */}
+            {/* 2. Events (Nightlife/Bars) */}
             <Link to="/collections/events" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
                 <img 
-                  src="https://b.zmtcdn.com/data/collections/e001bf04fb209dc7b744434752b75a4d_1674241263.jpg" 
-                  alt="Events"
+                  src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80" 
+                  alt="Nightlife"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                 />
                 <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
-                    <h3 className="text-white text-xl font-bold">Best of Live Events</h3>
-                    <p className="text-white text-sm">15 Places ▶</p>
+                    <h3 className="text-white text-xl font-bold">Best of Nightlife</h3>
+                    <p className="text-white text-sm">{counts.events} Places ▶</p>
                 </div>
             </Link>
 
-            {/* CARD 3: New */}
+            {/* 3. New Places */}
             <Link to="/collections/new" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
                 <img 
-                  src="https://b.zmtcdn.com/data/collections/77c1b9704985885cbe2cb094e9983eab_1682080027.jpg" 
+                  src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=600&q=80" 
                   alt="New"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                 />
                 <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
                     <h3 className="text-white text-xl font-bold">Newly Opened</h3>
-                    <p className="text-white text-sm">12 Places ▶</p>
+                    <p className="text-white text-sm">{counts.new} Places ▶</p>
                 </div>
             </Link>
 
-            {/* CARD 4: Veggie */}
+            {/* 4. Veggie Friendly */}
             <Link to="/collections/veggie" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
                 <img 
-                  src="https://b.zmtcdn.com/data/collections/a9362905a0378c767cf0bf1dce136a9a_1681987514.jpg" 
+                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" 
                   alt="Veggie"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
                 />
                 <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
                     <h3 className="text-white text-xl font-bold">Veggie Friendly</h3>
-                    <p className="text-white text-sm">22 Places ▶</p>
+                    <p className="text-white text-sm">{counts.veggie} Places ▶</p>
                 </div>
             </Link>
 
         </div>
       </div>
-
     </div>
   );
 };
