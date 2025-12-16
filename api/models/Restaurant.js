@@ -19,6 +19,10 @@ const restaurantSchema = new mongoose.Schema({
   rating: { type: Number, default: 4.0 },
   price: { type: String }, // e.g., "₹200 for one"
   image: { type: String, required: true }, // URL of the image
+  
+  // 🚨 THIS IS THE NEW FIELD THAT FIXES THE FILTER 🚨
+  isVeg: { type: Boolean, default: false }, 
+
   menu: [menuItemSchema] // Array of menu items
 });
 
