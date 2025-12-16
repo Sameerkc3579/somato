@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 
 // --- IMPORT MODELS ---
+// Ensure these files exist in api/models/
 const Restaurant = require("./models/Restaurant"); 
 const Order = require("./models/Order"); 
 
@@ -11,7 +12,7 @@ dotenv.config();
 
 const app = express();
 
-// ✅ FIX: Allow Frontend to access Backend
+// ✅ FIX 1: CORS Configuration
 app.use(cors({
   origin: "*", 
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -49,6 +50,7 @@ app.get("/api/restaurants", async (req, res) => {
 app.get("/api/restaurants/:id", async (req, res) => {
   try {
     const id = req.params.id;
+    // Check for valid MongoDB ID
     if (!id || id === 'undefined' || id.length < 24) { 
         return res.status(400).json({ message: "Invalid Restaurant ID" });
     }
@@ -72,7 +74,7 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// 4. SEED ROUTE (FULL DATA INCLUDED)
+// 4. SEED ROUTE (Full Data)
 app.get("/api/seed", async (req, res) => {
   try {
     const baseData = {
@@ -160,6 +162,7 @@ app.get("/api/seed", async (req, res) => {
     let finalData = [];
     const locations = ["Civil Lines", "Station Road", "City Centre", "MG Road", "Airport Zone", "Market Area", "High Street"];
 
+    // Fill data if city is missing in baseData
     allCities.forEach(city => {
        const cityBase = baseData[city] || genericRestaurants; 
        for (let i = 0; i < 50; i++) {
@@ -184,7 +187,7 @@ app.get("/api/seed", async (req, res) => {
        }
     });
 
-    // Shuffle
+    // Shuffle Data
     for (let i = finalData.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [finalData[i], finalData[j]] = [finalData[j], finalData[i]];
@@ -196,11 +199,18 @@ app.get("/api/seed", async (req, res) => {
     res.json({ message: "✅ Database Seeded!", total: createdRestaurants.length });
 
   } catch (error) {
+    console.error("Seed Error:", error);
     res.status(500).json({ message: error.message });
   }
 });
 
+// ✅ FIX 2: Vercel Conditional Listen
+// Only listen on a port if we are NOT on Vercel. 
+// Vercel handles the connection automatically in production.
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+}
 
-module.exports = app; // 👈 THIS IS REQUIRED FOR VERCEL!
+// ✅ FIX 3: Export App for Vercel
+module.exports = app;
