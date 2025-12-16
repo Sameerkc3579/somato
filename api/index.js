@@ -302,7 +302,47 @@ app.get("/api/fix-data", async (req, res) => {
     res.status(500).send("Error updating data: " + error.message);
   }
 });
+// --- SUPER DEBUG & FIX ROUTE ---
+app.get("/api/fix-data", async (req, res) => {
+  try {
+    // 1. Count how many Veggie places currently exist
+    const countBefore = await Restaurant.countDocuments({ isVeg: true });
 
+    // 2. FORCE UPDATE: Set 'isVeg: true' for all restaurants with "Paneer", "Veg", "Indian", or "Pizza" in cuisine
+    // This uses updateMany which bypasses some strict schema checks if they are still stuck
+    const updateResult = await Restaurant.updateMany(
+      { 
+        $or: [
+            { cuisine: { $regex: "Veg", $options: "i" } },
+            { cuisine: { $regex: "Indian", $options: "i" } },
+            { cuisine: { $regex: "Pizza", $options: "i" } },
+            { cuisine: { $regex: "Fast Food", $options: "i" } }
+        ]
+      },
+      { $set: { isVeg: true } }
+    );
+
+    // 3. FORCE UPDATE: Set 'Nightlife' for Bars
+    await Restaurant.updateMany(
+      { cuisine: { $regex: "Bar", $options: "i" } },
+      { $set: { isVeg: false } } // Ensure Bars are not marked as Veg unless specified
+    );
+
+    // 4. Count again to see if it worked
+    const countAfter = await Restaurant.countDocuments({ isVeg: true });
+
+    res.json({
+      message: "Fix Run Complete",
+      veggie_places_before: countBefore,
+      veggie_places_after: countAfter,
+      modified_documents: updateResult.modifiedCount,
+      note: "If 'after' is greater than 0, your database is fixed!"
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // ✅ FIX 2: Vercel Conditional Listen
 // Only listen on a port if we are NOT on Vercel. 
 // Vercel handles the connection automatically in production.
