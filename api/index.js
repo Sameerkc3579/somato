@@ -338,6 +338,26 @@ app.get("/api/force-veggie", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// --- TRUTH CHECKER ROUTE ---
+app.get("/api/check-db", async (req, res) => {
+  try {
+    // Get one restaurant
+    const r = await Restaurant.findOne();
+    
+    res.json({
+      message: "Here is the raw data for one restaurant. Look for 'isVeg'.",
+      restaurant_name: r.name,
+      // We check if the field exists AT ALL
+      has_isVeg_field: r.isVeg !== undefined,
+      isVeg_value: r.isVeg,
+      full_data: r
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ✅ FIX 2: Vercel Conditional Listen
 // Only listen on a port if we are NOT on Vercel. 
 // Vercel handles the connection automatically in production.
