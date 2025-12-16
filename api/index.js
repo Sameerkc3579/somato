@@ -84,6 +84,34 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
+// 3.5 GET COLLECTIONS (New Filter Route)
+app.get("/api/collections/:type", async (req, res) => {
+  try {
+    const { type } = req.params;
+    let query = {};
+
+    if (type === "trending") {
+      // Logic: Rating 4.0 or higher
+      query = { rating: { $gte: 4.0 } };
+    } else if (type === "veggie") {
+      // Logic: Only vegetarian
+      query = { isVeg: true };
+    } else if (type === "new") {
+      // Logic: Just show the most recently added (sorted by ID)
+      const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
+      return res.json(results);
+    } else if (type === "events") {
+      // Logic: High rating & Expensive (simulating "Events/Premium")
+      query = { rating: { $gte: 4.5 } };
+    }
+
+    const results = await Restaurant.find(query);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // 4. SEED ROUTE (Full Data)
 app.get("/api/seed", async (req, res) => {
   try {

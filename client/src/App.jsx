@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import Checkout from "./pages/Checkout";     
 import OrderSuccess from "./pages/OrderSuccess";
 import Profile from "./pages/Profile"; 
+import Collection from "./pages/Collection";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +54,7 @@ const App = () => {
         <Route path="/order-success" element={<OrderSuccess />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/collections/:type" element={<Collection />} />
       </Routes>
       
       <Footer />

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Collections from "../components/Collections";
 
 // --- BIG LIST OF CITIES (For the Hero Dropdown) ---
 const cities = [
@@ -35,15 +34,14 @@ const Home = ({ city, setCity }) => {
     {
       title: "Dining",
       description: "View the city's favourite dining venues",
-      // ✅ WORKING IMAGE URL
       cover: "https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/dining-out"
+      link: "/dining-out" // Note: Ensure you have a route for this or redirect to delivery
     },
     {
       title: "Live Events",
       description: "Discover India's best events & concerts",
       cover: "https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&w=600",
-      link: "/nightlife"
+      link: "/nightlife" // Note: Ensure you have a route for this or redirect to delivery
     }
   ];
 
@@ -124,7 +122,75 @@ const Home = ({ city, setCity }) => {
         </div>
       </div>
 
-      <Collections />
+      {/* --- 🚨 COLLECTIONS SECTION (Integrated Directly) 🚨 --- */}
+      <div className="max-w-6xl mx-auto px-4 mt-16 mb-10">
+        <h2 className="text-3xl font-bold text-gray-800">Collections</h2>
+        <div className="flex justify-between items-end mb-6">
+          <p className="text-gray-500 text-lg">
+            Explore curated lists of top restaurants, cafes, pubs, and bars in your city, based on trends
+          </p>
+          <span className="text-zomatoRed text-sm cursor-pointer hover:underline hidden md:block">
+            All collections in {city} ▶
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            {/* CARD 1: Trending */}
+            <Link to="/collections/trending" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
+                <img 
+                  src="https://b.zmtcdn.com/data/collections/684397cd092de8a3631e121ca977bc47_1674241263.jpg" 
+                  alt="Trending"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
+                <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <h3 className="text-white text-xl font-bold">Top Trending Spots</h3>
+                    <p className="text-white text-sm">29 Places ▶</p>
+                </div>
+            </Link>
+
+            {/* CARD 2: Events */}
+            <Link to="/collections/events" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
+                <img 
+                  src="https://b.zmtcdn.com/data/collections/e001bf04fb209dc7b744434752b75a4d_1674241263.jpg" 
+                  alt="Events"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
+                <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <h3 className="text-white text-xl font-bold">Best of Live Events</h3>
+                    <p className="text-white text-sm">15 Places ▶</p>
+                </div>
+            </Link>
+
+            {/* CARD 3: New */}
+            <Link to="/collections/new" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
+                <img 
+                  src="https://b.zmtcdn.com/data/collections/77c1b9704985885cbe2cb094e9983eab_1682080027.jpg" 
+                  alt="New"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
+                <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <h3 className="text-white text-xl font-bold">Newly Opened</h3>
+                    <p className="text-white text-sm">12 Places ▶</p>
+                </div>
+            </Link>
+
+            {/* CARD 4: Veggie */}
+            <Link to="/collections/veggie" className="relative h-80 rounded-xl overflow-hidden cursor-pointer group">
+                <img 
+                  src="https://b.zmtcdn.com/data/collections/a9362905a0378c767cf0bf1dce136a9a_1681987514.jpg" 
+                  alt="Veggie"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
+                <div className="absolute bottom-0 p-4 w-full bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <h3 className="text-white text-xl font-bold">Veggie Friendly</h3>
+                    <p className="text-white text-sm">22 Places ▶</p>
+                </div>
+            </Link>
+
+        </div>
+      </div>
+
     </div>
   );
 };
