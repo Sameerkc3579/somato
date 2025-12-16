@@ -302,44 +302,36 @@ app.get("/api/fix-data", async (req, res) => {
     res.status(500).send("Error updating data: " + error.message);
   }
 });
-// --- NUCLEAR FIX ROUTE ---
-app.get("/api/fix-data", async (req, res) => {
+// --- BRUTE FORCE VEGGIE FIX ---
+app.get("/api/force-veggie", async (req, res) => {
   try {
-    // 1. Get ALL restaurants
-    const allRestaurants = await Restaurant.find();
+    // 1. Get the first 10 restaurants from the database (Any 10)
+    const restaurants = await Restaurant.find().limit(10);
 
-    if (allRestaurants.length === 0) return res.send("No restaurants found in DB!");
-
-    let count = 0;
-    
-    // 2. Loop through them and FORCE updates
-    for (const r of allRestaurants) {
-      let changed = false;
-
-      // Force logic: If cuisine has "Veg", "Paneer", "Pizza", "Indian" -> Make it Veg
-      if (r.cuisine.match(/Veg|Paneer|Pizza|Indian|Fast Food/i)) {
-        r.isVeg = true;
-        changed = true;
-      }
-
-      // Force logic: If cuisine has "Bar" or "Pub" -> Make it Nightlife (Not Veg)
-      if (r.cuisine.match(/Bar|Pub|Drinks/i)) {
-        r.isVeg = false;
-        // Ensure "Bar" is in the cuisine text for the filter to catch it
-        if (!r.cuisine.includes("Bar")) r.cuisine += ", Bar";
-        changed = true;
-      }
-
-      if (changed) {
-        await r.save(); // Save individual document
-        count++;
-      }
+    if (restaurants.length === 0) {
+      return res.status(404).json({ message: "ERROR: Database is empty. No restaurants to update." });
     }
 
-    res.json({ 
-      message: "Scanned all restaurants", 
-      updated_count: count,
-      total_found: allRestaurants.length
+    const updatedNames = [];
+
+    // 2. Loop through them and FORCE isVeg = true
+    for (const r of restaurants) {
+      r.isVeg = true; 
+      
+      // Optional: Add "Veg" to cuisine name just so you can see it changed
+      if (!r.cuisine.includes("Veg")) {
+         r.cuisine = r.cuisine + " (Pure Veg)";
+      }
+      
+      await r.save();
+      updatedNames.push(r.name);
+    }
+
+    // 3. Send back the names of the places we updated
+    res.json({
+      message: "SUCCESS! Force-updated these 10 restaurants to be Veggie:",
+      total_updated: updatedNames.length,
+      names: updatedNames
     });
 
   } catch (error) {
