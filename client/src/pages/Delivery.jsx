@@ -1,46 +1,58 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useLocation } from 'react-router-dom'; // Import useLocation to read query params
 import Filters from "../components/Filters";
 import RestaurantCard from "../components/RestaurantCard";
 
-// NOTE: We assume this component receives the 'city' prop from App.jsx
+// NOTE: We assume this component receives the 'searchTerm' and 'city' prop from App.jsx
 const Delivery = ({ searchTerm, city }) => { 
   // State to hold the full list of restaurants fetched from the API for the current city
   const [restaurants, setRestaurants] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [activeFilters, setActiveFilters] = useState([]);
+  
+  // 🚨 VIRTUAL SCROLLING STATE 🚨
+  // The number of items currently visible to the user
+  const initialLoadCount = 18;
+  const loadIncrement = 9; // Load 9 more items each time
+  const [visibleCount, setVisibleCount] = useState(initialLoadCount);
+  
+  // Ref for the bottom-most element (used for Intersection Observer)
+  const loaderRef = useRef(null); 
+  
+  // Get query parameters from URL (e.g., ?filter=Nightlife)
+  const location = useLocation();
 
   // --- API DATA FETCHING (Triggered by City Change) ---
   const fetchRestaurants = useCallback(() => {
     setLoading(true);
+    setVisibleCount(initialLoadCount); // Reset visible count on new city fetch
     
     // Fetch ALL data (since your API doesn't seem to filter by city directly)
     fetch("/api/restaurants") 
       .then((res) => res.json())
       .then((data) => {
         
-        const lowerSelectedCity = city.toLowerCase().trim();
+        const lowerSelectedCity = city.toLowerCase().trim();
 
-        // 1. Attempt a strict city match (Current strict logic)
+        // 1. Attempt a strict city match
         let filteredList = data.filter(
             (r) => r.city && r.city.toLowerCase().trim() === lowerSelectedCity
         );
 
-        // 🚨 SOLUTION: Implement a fallback if the strict match fails 🚨
+        // 🚨 SOLUTION: Implement a fallback if the strict match fails 🚨
         if (filteredList.length === 0 && data.length > 0) {
-            console.warn(`Strict city match failed for "${city}". Trying partial match as fallback.`);
-            
-            // 2. Fallback to partial match (e.g., "Delhi" matches "Delhi NCR")
-            filteredList = data.filter(
-                // Check if the city name in the data INCLUDES the selected city name
-                (r) => r.city && r.city.toLowerCase().includes(lowerSelectedCity)
-            );
-            
-            // 3. Final Fallback: If partial match also fails, show ALL restaurants 
-            //    (This ensures the page doesn't break, though data may be inconsistent)
-            if (filteredList.length === 0) {
-                console.warn("Partial match also failed. Showing all restaurants as final fallback.");
-                filteredList = data; 
-            }
+            console.warn(`Strict city match failed for "${city}". Trying partial match as fallback.`);
+            
+            // 2. Fallback to partial match 
+            filteredList = data.filter(
+                (r) => r.city && r.city.toLowerCase().includes(lowerSelectedCity)
+            );
+            
+            // 3. Final Fallback: If partial match also fails, show ALL restaurants 
+            if (filteredList.length === 0) {
+                console.warn("Partial match also failed. Showing all restaurants as final fallback.");
+                filteredList = data; 
+            }
         }
 
         setRestaurants(filteredList);
@@ -51,7 +63,7 @@ const Delivery = ({ searchTerm, city }) => {
         setLoading(false);
         setRestaurants([]); 
       });
-  }, [city]); // CRUCIAL: Re-run when city changes
+  }, [city, initialLoadCount]); // Re-run when city changes
 
   // Fetch data on initial load AND when the city changes
   useEffect(() => {
@@ -59,51 +71,101 @@ const Delivery = ({ searchTerm, city }) => {
   }, [fetchRestaurants]);
 
 
-  // --- Infinite Scroll Handler (Kept simple as data is fetched upfront) ---
-  const handleScroll = useCallback(() => {
-    return;
-  }, []); 
+  // --- INITIALIZE FILTERS FROM URL QUERY PARAMETERS ---
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const filterFromUrl = params.get('filter'); // Get the value of ?filter=...
+    
+    // Check if the URL requested the Nightlife filter
+    if (filterFromUrl === 'Nightlife' && activeFilters.length === 0) {
+      // Set the active filter state to trigger the Nightlife logic below
+      setActiveFilters(['Bar']); 
+    }
+  }, [location.search]);
 
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
 
-  // --- FILTER LOGIC (Applied to the city-filtered data) ---
-  const filteredItems = restaurants.filter((restaurant) => {
+  // --- FILTER LOGIC (Applied to the city-filtered data) ---
+  // useMemo ensures this expensive filter operation only runs when dependencies change
+  const filteredItems = useMemo(() => {
+    return restaurants.filter((restaurant) => {
     
-    // 1. Search Filter
-    if (searchTerm) {
-        const lowerSearch = searchTerm.toLowerCase();
-        // Ensure fields exist before calling toLowerCase()
-        const nameMatch = restaurant.name && restaurant.name.toLowerCase().includes(lowerSearch);
-        const cuisineMatch = restaurant.cuisine && restaurant.cuisine.toLowerCase().includes(lowerSearch);
-        const menuMatch = restaurant.menu && restaurant.menu.some((dish) => 
-            dish.name && dish.name.toLowerCase().includes(lowerSearch)
-        );
-        if (!nameMatch && !cuisineMatch && !menuMatch) return false;
-    }
+      // 1. Search Filter
+      if (searchTerm) {
+          const lowerSearch = searchTerm.toLowerCase();
+          const nameMatch = restaurant.name && restaurant.name.toLowerCase().includes(lowerSearch);
+          const cuisineMatch = restaurant.cuisine && restaurant.cuisine.toLowerCase().includes(lowerSearch);
+          const menuMatch = restaurant.menu && restaurant.menu.some((dish) => 
+              dish.name && dish.name.toLowerCase().includes(lowerSearch)
+          );
+          if (!nameMatch && !cuisineMatch && !menuMatch) return false;
+      }
 
-    // 2. Rating Filter (4.0+)
-    if (activeFilters.includes("rating")) {
-        if (parseFloat(restaurant.rating) < 4.0) return false;
-    }
+      // 2. Rating Filter (4.0+)
+      if (activeFilters.includes("rating")) {
+          if (parseFloat(restaurant.rating) < 4.0) return false;
+      }
 
-    // 3. Pure Veg Filter
-    if (activeFilters.includes("veg")) {
-        if (restaurant.isVeg === false) return false;
-    }
+      // 3. Pure Veg Filter
+      if (activeFilters.includes("veg")) {
+          if (restaurant.isVeg === false) return false;
+      }
 
-    // 4. Specific Cuisine Filters
-    const selectedCuisines = activeFilters.filter(f => f !== "rating" && f !== "veg");
-    if (selectedCuisines.length > 0) {
-        const restaurantCuisines = restaurant.cuisine ? restaurant.cuisine.toLowerCase() : '';
-        const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
-        if (!hasMatch) return false;
-    }
+      // 4. Specific Cuisine Filters (INCLUDING NIGHTLIFE/BAR)
+      const selectedCuisines = activeFilters.filter(f => f !== "rating" && f !== "veg");
+      if (selectedCuisines.length > 0) {
+          const restaurantCuisines = restaurant.cuisine ? restaurant.cuisine.toLowerCase() : '';
+          const hasMatch = selectedCuisines.some(c => {
+              const lowerC = c.toLowerCase();
+              
+              // Handle Nightlife filter case: check for Bar, Pub, Nightlife tags
+              if (lowerC === 'nightlife' || lowerC === 'bar') {
+                  return restaurantCuisines.includes('bar') || restaurantCuisines.includes('pub') || restaurantCuisines.includes('nightlife');
+              }
+              
+              // Handle general cuisine filters
+              return restaurantCuisines.includes(lowerC);
+          });
+          if (!hasMatch) return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [restaurants, searchTerm, activeFilters]);
+
+
+  // --- 🚨 INFINITE SCROLLING EFFECT (Intersection Observer) 🚨
+  useEffect(() => {
+    if (loading || !filteredItems.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredItems.length) {
+          // If the loader is visible and there are more items to show, load more
+          setVisibleCount(prevCount => prevCount + loadIncrement);
+        }
+      },
+      {
+        rootMargin: '200px', // Start loading when the user is 200px above the bottom
+      }
+    );
+
+    // Attach the observer to the loader element
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    // Cleanup function
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [loading, filteredItems.length, visibleCount]); 
+
+
+  // --- Items to render (Only a subset of the fully filtered list) ---
+  const itemsToRender = filteredItems.slice(0, visibleCount);
+  const showLoader = visibleCount < filteredItems.length;
 
   return (
     <>
@@ -121,8 +183,8 @@ const Delivery = ({ searchTerm, city }) => {
                     <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-gray-500 mt-2">Fetching the latest delivery options...</p>
                 </div>
-            ) : filteredItems.length > 0 ? (
-                filteredItems.map((restaurant) => (
+            ) : itemsToRender.length > 0 ? (
+                itemsToRender.map((restaurant) => (
                     <RestaurantCard key={restaurant._id} info={restaurant} currentCity={city} /> 
                 ))
             ) : (
@@ -131,6 +193,15 @@ const Delivery = ({ searchTerm, city }) => {
                     <p className="text-gray-400">Try removing some filters or changing the city.</p>
                 </div>
             )}
+            
+            {/* 🚨 LOADER/SCROLL TRIGGER 🚨 */}
+            {showLoader && (
+                <div ref={loaderRef} className="col-span-3 text-center py-4">
+                    <div className="inline-block w-6 h-6 border-3 border-gray-300 border-t-zomatoRed rounded-full animate-spin"></div>
+                    <p className="text-gray-500 mt-2">Loading more...</p>
+                </div>
+            )}
+            
           </div>
         </div>
       </div>
