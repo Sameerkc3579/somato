@@ -107,7 +107,8 @@ const Delivery = ({ city }) => {
   const toggleFilter = (f) => setActiveFilters(prev => prev.includes(f) ? prev.filter(i => i !== f) : [...prev, f]);
 
   return (
-    <div className="min-h-screen bg-gray-50/20 pb-20">
+    // Added overflow-x-hidden to correct mobile layout
+    <div className="min-h-screen bg-gray-50/20 pb-20 w-full overflow-x-hidden">
       <TabOptions activeTab="Delivery" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-4 mb-2">
@@ -124,7 +125,7 @@ const Delivery = ({ city }) => {
             {infiniteList.map((restaurant, index) => (
                 <RestaurantCard key={`${restaurant.id}-${index}`} info={restaurant} currentCity={city} />
             ))}
-            <div ref={loaderRef} className="col-span-3 h-20 flex justify-center items-center">
+            <div ref={loaderRef} className="col-span-1 md:col-span-2 lg:col-span-3 h-20 flex justify-center items-center">
                 <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
             </div>
         </div>

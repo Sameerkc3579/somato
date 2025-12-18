@@ -426,12 +426,14 @@ const RestaurantPage = () => {
                              <p className="text-gray-500 text-sm mb-2 line-clamp-2">{item.desc}</p>
                           </div>
                           
-                          <button 
+                          <motion.button 
+                            whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => navigate('/checkout', { state: { cartItems: [item], totalPrice: parseInt(item.price), restaurantName: restaurantInfo.name }})}
-                            className="bg-[#24963F] hover:bg-[#1e7e34] text-white text-sm font-bold px-8 py-2.5 rounded-lg shadow-md transition-colors w-fit flex items-center gap-2 mt-2"
+                            className="bg-[#24963F] hover:bg-[#1e7e34] text-white text-sm font-bold px-8 py-2.5 rounded-lg shadow-md transition-all w-fit flex items-center gap-2 mt-2"
                           >
                             ADD TO CART <Plus className="w-3 h-3" />
-                          </button>
+                          </motion.button>
                         </div>
                       </motion.div>
                     ))}
