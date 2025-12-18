@@ -462,7 +462,7 @@ const RestaurantPage = ({ city = "Hajipur" }) => {
                         height="100%" 
                         frameBorder="0" 
                         scrolling="no" 
-                        src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(restaurantInfo.address)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(restaurantInfo.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                         className="filter grayscale group-hover:grayscale-0 transition-all duration-500"
                       ></iframe>
                     </div>
