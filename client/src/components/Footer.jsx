@@ -1,182 +1,185 @@
 import React from 'react';
-import { FaLinkedin, FaInstagram, FaTwitter, FaYoutube, FaFacebook } from 'react-icons/fa';
+import { FaLinkedinIn, FaInstagram, FaTwitter, FaYoutube, FaFacebookF, FaGlobe, FaChevronDown } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
-    // Column data for the footer links, now with all fictional names
+    // Exact columns from your screenshot
     const footerColumns = [
         {
             title: "ABOUT SOMATO",
             links: [
-                { text: "Who We Are", url: "/about" }, 
-                { text: "Blog", url: "https://blog.somato-clone.com", isExternal: true }, 
-                { text: "Work With Us", url: "/careers" }, 
-                { text: "Investor Relations", url: "/investors" }, 
-                { text: "Report Fraud", url: "/report-fraud" }, 
-                { text: "Press Kit", url: "/press" }, 
+                { text: "Who We Are", url: "/about" },
+                { text: "Blog", url: "/blog" },
+                { text: "Work With Us", url: "/careers" },
+                { text: "Investor Relations", url: "/investors" },
+                { text: "Report Fraud", url: "/report-fraud" },
+                { text: "Press Kit", url: "/press" },
                 { text: "Contact Us", url: "/contact" }
             ],
         },
         {
             title: "SOMAVERSE",
             links: [
-                { text: "Somato", url: "/" }, 
-                { text: "QuickBuy", url: "https://www.quickbuy-clone.com", isExternal: true }, 
-                { text: "FoodRescue India", url: "https://www.foodrescue-clone.org", isExternal: true }, 
-                { text: "HyperFresh", url: "https://www.hyperfresh-clone.com", isExternal: true }, 
+                { text: "Somato", url: "/" },
+                { text: "QuickBuy", url: "/quickbuy" },
+                { text: "FoodRescue India", url: "/food-rescue" },
+                { text: "HyperFresh", url: "/hyperfresh" },
                 { text: "SomatoWorld", url: "/somato-world" }
             ],
         },
         {
             title: "FOR RESTAURANTS",
             links: [
-                { text: "Partner With Us", url: "/partner" }, 
+                { text: "Partner With Us", url: "/partner" },
                 { text: "Apps For You", url: "/apps" }
             ],
+            // Nested column for Enterprise
             secondTitle: "FOR ENTERPRISE",
             secondLinks: [
-                { text: "Somato For Business", url: "/enterprise" }
-            ],
+                { text: "Somato For Business", url: "/business" }
+            ]
         },
         {
             title: "LEARN MORE",
             links: [
-                { text: "Privacy", url: "/privacy" }, 
-                { text: "Security", url: "/security" }, 
-                { text: "Terms", url: "/terms" }, 
+                { text: "Privacy", url: "/privacy" },
+                { text: "Security", url: "/security" },
+                { text: "Terms", url: "/terms" },
                 { text: "Sitemap", url: "/sitemap" }
             ],
         },
     ];
 
     const socialLinks = [
-        { icon: FaLinkedin, url: "https://www.linkedin.com/company/somato-clone" },
-        { icon: FaInstagram, url: "https://www.instagram.com/somato-clone" },
-        { icon: FaTwitter, url: "https://twitter.com/somato-clone" },
-        { icon: FaYoutube, url: "https://www.youtube.com/user/somato-clone" },
-        { icon: FaFacebook, url: "https://www.facebook.com/somato-clone" }
+        { icon: FaLinkedinIn, url: "#" },
+        { icon: FaInstagram, url: "#" },
+        { icon: FaTwitter, url: "#" },
+        { icon: FaYoutube, url: "#" },
+        { icon: FaFacebookF, url: "#" }
     ];
 
-    const handleInternalClick = (e, url) => {
-        e.preventDefault();
-        alert(`Navigating to simulated page: ${url}`);
-        // In a real app, you would use React Router's navigate function here.
-    };
-
     return (
-        <footer className="bg-gray-100 border-t border-gray-200 py-10 md:py-16">
-            <div className="max-w-6xl mx-auto px-4">
+        <footer className="bg-[#F8F8F8] w-full pt-12 pb-6 border-t border-gray-200 mt-auto font-sans">
+            <div className="max-w-[1100px] mx-auto px-4">
                 
-                {/* --- TOP ROW: Logo and Location/Language --- */}
-                <div className="flex justify-between items-center mb-10 border-b border-gray-300 pb-8">
-                    <Link to="/" className="text-3xl font-bold text-zomatoRed no-underline cursor-pointer">
-                        Somato
-                    </Link>
+                {/* --- TOP ROW: Logo & Language/Country --- */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-10">
                     
-                    <div className="flex items-center space-x-4">
-                        <select className="border border-gray-400 p-2 rounded-lg text-sm bg-white cursor-pointer">
-                            <option>India</option>
-                            <option>USA</option>
-                            <option>UK</option>
-                        </select>
-                        <select className="border border-gray-400 p-2 rounded-lg text-sm bg-white cursor-pointer">
-                            <option>English</option>
-                            <option>Hindi</option>
-                        </select>
+                    {/* Logo - Black Text */}
+                    <Link to="/" className="mb-4 md:mb-0">
+                        <span className="text-3xl font-black italic tracking-tighter text-black">
+                            Somato
+                        </span>
+                    </Link>
+
+                    {/* Dropdowns */}
+                    <div className="flex gap-4">
+                        <button className="flex items-center gap-2 border border-gray-300 rounded px-2 py-1.5 bg-transparent hover:bg-gray-50 transition text-slate-800 text-[13px] font-medium min-w-[100px] justify-between">
+                            <div className="flex items-center gap-2">
+                                {/* India Flag */}
+                                <img 
+                                    src="https://flagcdn.com/w20/in.png" 
+                                    alt="India" 
+                                    className="w-5 h-3.5 object-cover shadow-sm" 
+                                />
+                                <span>India</span>
+                            </div>
+                            <FaChevronDown size={10} />
+                        </button>
+
+                        <button className="flex items-center gap-2 border border-gray-300 rounded px-2 py-1.5 bg-transparent hover:bg-gray-50 transition text-slate-800 text-[13px] font-medium min-w-[100px] justify-between">
+                            <div className="flex items-center gap-2">
+                                <FaGlobe size={14} />
+                                <span>English</span>
+                            </div>
+                            <FaChevronDown size={10} />
+                        </button>
                     </div>
                 </div>
 
-                {/* --- MAIN LINKS GRID --- */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+                {/* --- LINKS SECTION --- */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-y-8 gap-x-2 mb-16">
                     
-                    {footerColumns.map((col, colIndex) => (
-                        <div key={colIndex} className="space-y-4">
-                            <h3 className="text-xs font-extrabold text-gray-700 tracking-wider mb-2">{col.title}</h3>
-                            <ul className="space-y-2">
-                                {col.links.map((link, linkIndex) => (
-                                    <li key={linkIndex}>
-                                        {link.isExternal ? (
-                                            <a 
-                                                href={link.url} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
-                                                className="text-sm text-gray-600 hover:text-gray-900 transition duration-150"
-                                            >
-                                                {link.text}
-                                            </a>
-                                        ) : (
-                                            <Link 
-                                                to={link.url} 
-                                                onClick={(e) => link.url !== "/" && handleInternalClick(e, link.url)}
-                                                className="text-sm text-gray-600 hover:text-gray-900 transition duration-150"
-                                            >
-                                                {link.text}
-                                            </Link>
-                                        )}
+                    {/* First 4 Columns (Text Links) */}
+                    {footerColumns.map((col, index) => (
+                        <div key={index} className="flex flex-col">
+                            <h6 className="text-[11px] font-bold text-black tracking-[0.15em] mb-3 uppercase">
+                                {col.title}
+                            </h6>
+                            <ul className="space-y-1.5 mb-5">
+                                {col.links.map((link, i) => (
+                                    <li key={i}>
+                                        <Link to={link.url} className="text-[13px] text-gray-500 hover:text-gray-900 font-normal no-underline">
+                                            {link.text}
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>
 
-                            {/* Second mini-column */}
+                            {/* Optional Second Group in same column */}
                             {col.secondTitle && (
-                                <div className="mt-6 space-y-2">
-                                    <h3 className="text-xs font-extrabold text-gray-700 tracking-wider mb-2">{col.secondTitle}</h3>
-                                    <ul className="space-y-2">
-                                        {col.secondLinks.map((link, linkIndex) => (
-                                            <li key={linkIndex}>
-                                                 <Link 
-                                                    to={link.url} 
-                                                    onClick={(e) => handleInternalClick(e, link.url)}
-                                                    className="text-sm text-gray-600 hover:text-gray-900 transition duration-150"
-                                                >
+                                <>
+                                    <h6 className="text-[11px] font-bold text-black tracking-[0.15em] mb-3 uppercase">
+                                        {col.secondTitle}
+                                    </h6>
+                                    <ul className="space-y-1.5">
+                                        {col.secondLinks.map((link, i) => (
+                                            <li key={i}>
+                                                <Link to={link.url} className="text-[13px] text-gray-500 hover:text-gray-900 font-normal no-underline">
                                                     {link.text}
                                                 </Link>
                                             </li>
                                         ))}
                                     </ul>
-                                </div>
+                                </>
                             )}
                         </div>
                     ))}
 
-                    {/* --- SOCIAL MEDIA COLUMN --- */}
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-extrabold text-gray-700 tracking-wider mb-2">SOCIAL LINKS</h3>
-                        <div className="flex space-x-4 text-xl text-gray-700">
-                            {socialLinks.map((social, index) => (
-                                <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 cursor-pointer">
-                                    <social.icon />
+                    {/* Column 5: Social & Apps */}
+                    <div className="flex flex-col">
+                        <h6 className="text-[11px] font-bold text-black tracking-[0.15em] mb-3 uppercase">
+                            Social Links
+                        </h6>
+                        <div className="flex gap-1.5 mb-5">
+                            {socialLinks.map((item, i) => (
+                                <a 
+                                    key={i} 
+                                    href={item.url} 
+                                    className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-white hover:opacity-80 transition"
+                                >
+                                    <item.icon size={10} />
                                 </a>
                             ))}
                         </div>
-                        
-                        <div className="space-y-4 pt-4">
-                             {/* App Store Buttons - Links are kept generic */}
-                             <a href="https://apps.apple.com/us/app/somato-clone/id434689440" target="_blank" rel="noopener noreferrer">
+
+                        <div className="flex flex-col gap-2">
+                            <a href="#" className="block w-[130px]">
                                 <img 
-                                    src="https://b.zmtcdn.com/data/webuikit/9f220f18820c810d79679659b9e592f71580978601.png"
-                                    alt="Download on the App Store"
-                                    className="w-32 cursor-pointer"
+                                    src="https://b.zmtcdn.com/data/webuikit/9f220f18820c810d79679659b9e592f71580978601.png" 
+                                    alt="App Store" 
+                                    className="w-full h-auto cursor-pointer"
                                 />
-                             </a>
-                             <a href="https://play.google.com/store/apps/details?id=com.somato.android.clone" target="_blank" rel="noopener noreferrer">
+                            </a>
+                            <a href="#" className="block w-[130px]">
                                 <img 
-                                    src="https://b.zmtcdn.com/data/webuikit/23e930757c32d47cd7521798361596a59b9e592f71580978648.png"
-                                    alt="Get it on Google Play"
-                                    className="w-32 cursor-pointer"
+                                    src="https://b.zmtcdn.com/data/webuikit/23e930757c32d47cd7521798361596a59b9e592f71580978648.png" 
+                                    alt="Google Play" 
+                                    className="w-full h-auto cursor-pointer"
                                 />
-                             </a>
+                            </a>
                         </div>
                     </div>
 
                 </div>
 
-                {/* --- COPYRIGHT --- */}
-                <div className="mt-16 pt-8 border-t border-gray-300">
-                    <p className="text-xs text-gray-500 leading-relaxed max-w-4xl">
-                        By continuing past this page, you agree to our Terms of Service, Cookie Policy, Privacy Policy, and Content Policies. All trademarks are properties of their respective owners. 2024 © Somato Clone. All rights reserved.
+                {/* --- BOTTOM SECTION --- */}
+                <div className="border-t border-gray-300 pt-5">
+                    <p className="text-[11px] text-gray-500 leading-5 font-normal">
+                        By continuing past this page, you agree to our Terms of Service, Cookie Policy, Privacy Policy and Content Policies. All trademarks are properties of their respective owners. 2024 © Somato™ Ltd. All rights reserved.
                     </p>
                 </div>
+
             </div>
         </footer>
     );

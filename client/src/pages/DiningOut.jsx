@@ -1,170 +1,137 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import RestaurantCard from "../components/RestaurantCard"; 
-import DiningFilters from "../components/DiningFilters"; 
+import TabOptions from "../components/TabOptions";
 
-// --- EXPANDED SIMULATED DINING DATA (15 total) ---
-const diningList = [
-    // NOTE: Data must be kept in this file if you are not using the API for DiningOut
-    // --- Example data structure (Ensure locations are correct) ---
-    { id: 10, name: "BBQ Grand Buffet", rating: 4.4, cuisine: "Barbeque, North Indian", price: "₹1800 for two", image: "https://images.pexels.com/photos/106343/pexels-photo-106343.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: true, servesBuffet: true, location: "Patna" },
-    { id: 11, name: "The Royal Table", rating: 4.1, cuisine: "North Indian, Mughlai", price: "₹1200 for two", image: "https://images.pexels.com/photos/1449767/pexels-photo-1449767.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: false, servesBuffet: false, location: "Patna" },
-    { id: 12, name: "Green Leaf Pure Veg", rating: 4.6, cuisine: "South Indian, North Indian", price: "₹800 for two", image: "https://images.pexels.com/photos/5560763/pexels-photo-5560763.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: true, hasBooking: false, hasOutdoor: false, servesBuffet: false, location: "Hajipur" },
-    { id: 13, name: "Italian Bistro", rating: 4.2, cuisine: "Italian, Continental", price: "₹1500 for two", image: "https://images.pexels.com/photos/2271107/pexels-photo-2271107.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: true, hasBooking: true, hasOutdoor: true, servesBuffet: false, location: "Patna" },
-    { id: 14, name: "Chopsticks Diner", rating: 3.9, cuisine: "Chinese, Asian", price: "₹900 for two", image: "https://images.pexels.com/photos/4393021/pexels-photo-4393021.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: false, hasOutdoor: false, servesBuffet: false, location: "Hajipur" },
-    { id: 15, name: "Tandoori Nights", rating: 4.5, cuisine: "North Indian, Mughlai", price: "₹1100 for two", image: "https://images.pexels.com/photos/9609835/pexels-photo-9609835.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: true, servesBuffet: false, location: "Patna" },
-    { id: 16, name: "Cafe Delight", rating: 3.8, cuisine: "Cafe, Beverages", price: "₹700 for two", image: "https://images.pexels.com/photos/1107717/pexels-photo-1107717.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: true, hasBooking: false, hasOutdoor: true, servesBuffet: false, location: "Hajipur" },
-    { id: 17, name: "Spice Route", rating: 4.3, cuisine: "Indian, Hyderabadi", price: "₹1300 for two", image: "https://images.pexels.com/photos/1639562/pexels-photo-1639562.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: false, servesBuffet: false, location: "Patna" },
-    { id: 18, name: "The Vault Lounge", rating: 4.7, cuisine: "Finger Food, Continental", price: "₹2000 for two", image: "https://images.pexels.com/photos/1239922/pexels-photo-1239922.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: true, servesBuffet: false, location: "Patna" },
-    { id: 19, name: "Sunset Grill", rating: 4.0, cuisine: "American, BBQ", price: "₹1600 for two", image: "https://images.pexels.com/photos/4551722/pexels-photo-4551722.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: false, hasOutdoor: true, servesBuffet: false, location: "Patna" },
-    { id: 20, name: "Dosa World", rating: 4.5, cuisine: "South Indian", price: "₹500 for two", image: "https://images.pexels.com/photos/4202325/pexels-photo-4202325.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: true, hasBooking: false, hasOutdoor: false, servesBuffet: false, location: "Hajipur" },
-    { id: 21, name: "Shri Mahavir Sweets", rating: 4.1, cuisine: "Sweets, Indian", price: "₹300 for two", image: "https://images.pexels.com/photos/5638276/pexels-photo-5638276.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: true, hasBooking: false, hasOutdoor: false, servesBuffet: false, location: "Hajipur" },
-    { id: 22, name: "Noodle House", rating: 3.7, cuisine: "Chinese", price: "₹850 for two", image: "https://images.pexels.com/photos/1897033/pexels-photo-1897033.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: false, hasOutdoor: false, servesBuffet: false, location: "Patna" },
-    { id: 23, name: "The Big Chill", rating: 4.8, cuisine: "European, Desserts", price: "₹1700 for two", image: "https://images.pexels.com/photos/1798314/pexels-photo-1798314.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: true, servesBuffet: false, location: "Patna" },
-    { id: 24, name: "Urban Tandoor", rating: 4.6, cuisine: "North Indian", price: "₹950 for two", image: "https://images.pexels.com/photos/1199958/pexels-photo-1199958.jpeg?auto=compress&cs=tinysrgb&w=600", isDiningVeg: false, hasBooking: true, hasOutdoor: false, servesBuffet: false, location: "Hajipur" },
+const diningData = [
+  { name: "Barbeque Nation", cuisine: "BBQ, North Indian", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80" },
+  { name: "Mainland China", cuisine: "Chinese, Asian", image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&q=80" },
+  { name: "Punjab Grill", cuisine: "North Indian, Mughlai", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80" },
+  { name: "The GT Road", cuisine: "North Indian, Buffet", image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=800&q=80" },
+  { name: "Pirates of Grill", cuisine: "BBQ, Continental", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80" },
+  { name: "Absolute Barbecues", cuisine: "BBQ, Indian", image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=800&q=80" },
+  { name: "Chili's", cuisine: "American, Mexican", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80" },
+  { name: "Nando's", cuisine: "Portuguese, Chicken", image: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800&q=80" },
+  { name: "TGI Fridays", cuisine: "American, Bar", image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=80" },
+  { name: "Hard Rock Cafe", cuisine: "American, Burgers", image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80" },
+  { name: "Social", cuisine: "Continental, Indian", image: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80" },
+  { name: "Farzi Cafe", cuisine: "Modern Indian", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" },
+  { name: "The Bombay Canteen", cuisine: "Indian, Modern", image: "https://images.unsplash.com/photo-1582298538104-fe2e74c2ed54?w=800&q=80" },
+  { name: "Indian Accent", cuisine: "Modern Indian", image: "https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?w=800&q=80" },
+  { name: "Bukhara", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1574096079513-d82599602959?w=800&q=80" },
+  { name: "Dum Pukht", cuisine: "Lucknowi, Mughlai", image: "https://images.unsplash.com/photo-1579027989536-b7b1f875659b?w=800&q=80" },
+  { name: "Peshawri", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?w=800&q=80" },
+  { name: "Dakshin", cuisine: "South Indian", image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=800&q=80" },
+  { name: "Karavalli", cuisine: "South Indian", image: "https://images.unsplash.com/photo-1626804475297-411d8c669930?w=800&q=80" },
+  { name: "Jamavar", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1596701062302-8a50d2aa8f0c?w=800&q=80" },
+  { name: "Wasabi by Morimoto", cuisine: "Japanese, Sushi", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80" },
+  { name: "Megu", cuisine: "Japanese", image: "https://images.unsplash.com/photo-1553621042-f6e147245754?w=800&q=80" },
+  { name: "Le Cirque", cuisine: "French, Italian", image: "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=800&q=80" },
+  { name: "Orient Express", cuisine: "European", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" },
+  { name: "1911", cuisine: "Continental", image: "https://images.unsplash.com/photo-1578474843222-9593bc81e58f?w=800&q=80" },
+  { name: "The Spice Route", cuisine: "Thai, Asian", image: "https://images.unsplash.com/photo-1555126634-323283e090fa?w=800&q=80" },
+  { name: "Sevilla", cuisine: "Spanish, Tapas", image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&q=80" },
+  { name: "Threesixtyone", cuisine: "Multi-Cuisine", image: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=800&q=80" },
+  { name: "K3", cuisine: "JW Marriott", image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=800&q=80" },
+  { name: "Spectra", cuisine: "Multi-Cuisine", image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&q=80" },
+  { name: "The Pavilion", cuisine: "Continental", image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=800&q=80" },
+  { name: "Tamra", cuisine: "Asian, Indian", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80" },
+  { name: "AnnaMaya", cuisine: "European, Indian", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" },
+  { name: "Pluck", cuisine: "Modern European", image: "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=800&q=80" },
+  { name: "The Qube", cuisine: "Continental", image: "https://images.unsplash.com/photo-1578474843222-9593bc81e58f?w=800&q=80" },
+  { name: "Machan", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=800&q=80" },
+  { name: "The Capital Kitchen", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80" },
+  { name: "Yellow Brick Road", cuisine: "Continental", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80" },
+  { name: "Gulati", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1585937421612-70a008356f36?w=800&q=80" },
+  { name: "Havemore", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80" },
+  { name: "Pind Balluchi", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80" },
+  { name: "Moti Mahal Delux", cuisine: "Mughlai", image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80" },
+  { name: "Kwality", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&q=80" },
+  { name: "United Coffee House", cuisine: "Continental", image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80" },
+  { name: "Embassy", cuisine: "North Indian", image: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800&q=80" },
+  { name: "Wenger's", cuisine: "Bakery, Fast Food", image: "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=800&q=80" },
+  { name: "The Big Chill", cuisine: "Italian, Cafe", image: "https://images.unsplash.com/photo-1579970373678-4394c8e734c6?w=800&q=80" },
+  { name: "Diggin", cuisine: "Italian, Continental", image: "https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?w=800&q=80" },
+  { name: "Music & Mountains", cuisine: "Continental", image: "https://images.unsplash.com/photo-1590502593747-42a996133562?w=800&q=80" },
+  { name: "Olive Bar & Kitchen", cuisine: "Mediterranean", image: "https://images.unsplash.com/photo-1572528751508-349887707e76?w=800&q=80" }
 ];
 
-// --- Fisher-Yates Shuffle Algorithm (Placed outside the component) ---
-const shuffleArray = (array) => {
-    const shuffled = [...array]; 
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-};
+const fullDiningList = diningData.map((item, index) => ({
+    id: 200 + index,
+    name: item.name,
+    rating: (Math.random() * (4.9 - 3.8) + 3.8).toFixed(1),
+    cuisine: item.cuisine,
+    price: `₹${Math.floor(Math.random() * 2000) + 800} for two`,
+    image: item.image,
+    hasBooking: index % 2 === 0,
+    hasOutdoor: index % 3 === 0,
+    servesBuffet: index % 4 === 0,
+    isDiningVeg: index % 5 === 0,
+    discount: index % 4 === 0 ? "Flat 20% OFF" : null
+}));
+
+const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+
+const FilterButton = ({ icon: Icon, text, hasDropdown, active, onClick }) => (
+  <button onClick={onClick} className={`flex items-center gap-2 px-4 py-2 bg-white border ${active ? 'border-[#EF4F5F] bg-red-50 text-[#EF4F5F]' : 'border-gray-300 text-gray-500'} rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all`}>
+    {Icon && <Icon className="w-4 h-4" />} {text} {hasDropdown && <ChevronDown className="w-4 h-4" />}
+  </button>
+);
 
 const DiningOut = ({ city }) => { 
-    const INITIAL_DISPLAY_COUNT = 9;
-    const LOAD_STEP = 6; 
-    
-    // 1. 🚨 KEEP STATE DEFINITIONS AT THE TOP 🚨
-    // Initialize state with an empty list, ready to be populated by useEffect
-    const [cityFilteredList, setCityFilteredList] = useState([]); 
-    const [displayedDiningItems, setDisplayedDiningItems] = useState([]); 
-    const [activeFilters, setActiveFilters] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    
-    
-    // --- 🚨 NEW: EFFECT TO HANDLE CITY CHANGE (Filter and Shuffle) 🚨 ---
-    const filterAndShuffleList = useCallback(() => {
-        // Filter the full list based on the city (case-insensitive)
-        const initialCityFilter = diningList.filter(r => 
-            r.location.toLowerCase() === city.toLowerCase()
-        );
-        
-        // Determine the list to use (city-filtered or generic fallback)
-        let newFilteredList = initialCityFilter.length > 0 ? initialCityFilter : diningList;
-        
-        // Apply shuffle to the determined list to randomize initial order
-        newFilteredList = shuffleArray(newFilteredList); 
-        
-        // Set the new list and reset the displayed items
-        setCityFilteredList(newFilteredList);
-        setDisplayedDiningItems(newFilteredList.slice(0, INITIAL_DISPLAY_COUNT));
-        setActiveFilters([]); // Optionally reset filters when city changes
-    }, [city]); // This effect runs every time the 'city' prop changes
+    const [activeFilters, setActiveFilters] = useState([]);
+    const [infiniteList, setInfiniteList] = useState([]);
+    const loaderRef = useRef(null);
     
+    const filteredList = useMemo(() => fullDiningList.filter(r => { 
+        if (activeFilters.includes("tableBooking") && !r.hasBooking) return false;
+        if (activeFilters.includes("outdoorSeating") && !r.hasOutdoor) return false;
+        if (activeFilters.includes("buffet") && !r.servesBuffet) return false;
+        if (activeFilters.includes("pureVeg") && !r.isDiningVeg) return false;
+        return true;
+    }), [activeFilters]);
+
+    useEffect(() => { setInfiniteList(filteredList.slice(0, 9)); }, [filteredList]);
+
     useEffect(() => {
-        filterAndShuffleList();
-    }, [filterAndShuffleList]);
-    
-    
-    // --- Filter the list based on active filters (calculated from current state) ---
-    const filteredItems = cityFilteredList.filter((restaurant) => { 
-        if (activeFilters.includes("tableBooking") && !restaurant.hasBooking) { return false; }
-        if (activeFilters.includes("outdoorSeating") && !restaurant.hasOutdoor) { return false; }
-        if (activeFilters.includes("buffet") && !restaurant.servesBuffet) { return false; }
-        if (activeFilters.includes("pureVeg") && !restaurant.isDiningVeg) { return false; }
-        
-        const selectedCuisines = activeFilters.filter(f => !["tableBooking", "outdoorSeating", "buffet", "pureVeg"].includes(f));
-        
-        if (selectedCuisines.length > 0) {
-            // Safety check: ensure cuisine exists before calling toLowerCase
-            const restaurantCuisines = restaurant.cuisine ? restaurant.cuisine.toLowerCase() : '';
-            const hasMatch = selectedCuisines.some(c => restaurantCuisines.includes(c.toLowerCase()));
-            if (!hasMatch) return false;
-        }
+        if(filteredList.length === 0) return;
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                setInfiniteList(prev => [...prev, ...shuffleArray(filteredList).slice(0, 6)]);
+            }
+        }, { rootMargin: '200px', threshold: 0.1 });
+        if (loaderRef.current) observer.observe(loaderRef.current);
+        return () => { if (loaderRef.current) observer.unobserve(loaderRef.current); };
+    }, [filteredList]); 
 
-        return true;
-    });
+    const toggleFilter = (f) => setActiveFilters(prev => prev.includes(f) ? prev.filter(i => i !== f) : [...prev, f]);
 
-    // --- SCROLL / LOAD LOGIC ---
-    
-    const loadMoreItems = () => {
-        setIsLoading(true);
-        const currentCount = displayedDiningItems.length;
-        // Use the next batch from the filtered list 
-        const nextBatch = filteredItems.slice(currentCount, currentCount + LOAD_STEP);
-
-        setTimeout(() => {
-            setDisplayedDiningItems(prev => [...prev, ...nextBatch]);
-            setIsLoading(false);
-        }, 300);
-    };
-
-    const handleScroll = useCallback(() => {
-        if (isLoading || displayedDiningItems.length >= filteredItems.length) return;
-        
-        if (
-            window.innerHeight + document.documentElement.scrollTop + 300 >=
-            document.documentElement.scrollHeight
-        ) {
-            loadMoreItems();
-        }
-    }, [isLoading, filteredItems.length, displayedDiningItems.length]);
-
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [handleScroll]);
-
-    // --- Filter Reset Logic (Crucial for infinite scroll) ---
-    useEffect(() => {
-        // When filters change, reset the displayed list to the initial slice of the currently filtered items
-        setDisplayedDiningItems(filteredItems.slice(0, INITIAL_DISPLAY_COUNT));
-    }, [activeFilters, cityFilteredList]); // Added cityFilteredList to dependencies to ensure reset after city change
-    
-    
-    return (
-        <>
-            <div className="bg-white min-h-screen pb-20">
-                <div className="max-w-6xl mx-auto px-4 pt-6">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-6">
-                        Dining Out Restaurants in {city}
-                    </h1>
-                    
-                    <DiningFilters 
-                        activeFilters={activeFilters} 
-                        setActiveFilters={setActiveFilters} 
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
-                        {displayedDiningItems.length > 0 ? (
-                            displayedDiningItems.map((restaurant) => (
-                                <RestaurantCard 
-                                    key={restaurant.id} 
-                                    info={restaurant} 
-                                    currentCity={city} 
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-3 text-center py-20">
-                                <h2 className="text-2xl font-bold text-gray-400">No dining places found in {city} 😔</h2>
-                                <p className="text-gray-400">Try adjusting your city or filters.</p>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* Loading Spinner */}
-                    {isLoading && (
-                        <div className="p-10 text-center">
-                            <div className="inline-block w-8 h-8 border-4 border-zomatoRed border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </>
-    );
+    return (
+        <div className="min-h-screen bg-gray-50/30 pb-20">
+            <TabOptions activeTab="Dining Out" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="py-4 mb-6">
+                    <h1 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">Dining Out Restaurants in <span className="font-bold text-[#EF4F5F]">{city || "Hajipur"}</span></h1>
+                    <div className="flex flex-wrap gap-3">
+                        <FilterButton icon={SlidersHorizontal} text="Filters" />
+                        <FilterButton text="Table Booking" active={activeFilters.includes("tableBooking")} onClick={() => toggleFilter("tableBooking")} />
+                        <FilterButton text="Outdoor Seating" active={activeFilters.includes("outdoorSeating")} onClick={() => toggleFilter("outdoorSeating")} />
+                        <FilterButton text="Serves Buffet" active={activeFilters.includes("buffet")} onClick={() => toggleFilter("buffet")} />
+                        <FilterButton text="Pure Veg" active={activeFilters.includes("pureVeg")} onClick={() => toggleFilter("pureVeg")} />
+                        <FilterButton text="Cuisines" hasDropdown />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {infiniteList.map((restaurant, index) => (
+                        <RestaurantCard key={`${restaurant.id}-${index}`} info={restaurant} currentCity={city} />
+                    ))}
+                    <div ref={loaderRef} className="col-span-3 h-20 flex justify-center items-center">
+                         <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default DiningOut;

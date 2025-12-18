@@ -22,7 +22,7 @@ app.use(cors({
 app.use(express.json());
 
 // --- DB CONNECTION ---
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect("mongodb+srv://sameer24102_db_user:4LBenngubNHjGoz4@cluster0.kx9t3ok.mongodb.net/?appName=Cluster0")
   .then(() => console.log("✅ MongoDB Connected Successfully!"))
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
 

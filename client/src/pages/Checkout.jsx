@@ -1,62 +1,84 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // ✅ Get User Data from Context
+import { useAuth } from "../context/AuthContext"; 
 
 const Checkout = () => { 
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ Get logged-in user info
+  const { user } = useAuth(); 
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
 
-  // 1. Get Cart Data (Safe check if state is missing)
+  // --- STATE FOR ADDRESS MANAGEMENT ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    name: user?.name || "Guest",
+    email: user?.email || "guest@example.com",
+    address: "Flat 402, Lotus Apartment, Gandhi Chowk, Hajipur, Bihar - 844101"
+  });
+
+  const [tempDetails, setTempDetails] = useState({ ...deliveryDetails });
+
+  // --- HANDLERS ---
+  const openEditModal = () => {
+    setTempDetails({ ...deliveryDetails });
+    setIsModalOpen(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setTempDetails(prev => ({ ...prev, [name]: value }));
+  };
+
+  const saveAddress = () => {
+    setDeliveryDetails({ ...tempDetails });
+    setIsModalOpen(false);
+  };
+
+  // --- CART LOGIC ---
   const cartItems = state?.cartItems || [];
   const restaurantName = state?.restaurantName || "Restaurant";
   const itemTotal = state?.totalPrice || 0;
 
-  // 2. Calculate Totals
   const deliveryFee = 40;
   const platformFee = 10;
   const grandTotal = itemTotal + deliveryFee + platformFee;
 
-  // 3. Handle "Place Order" Click (Connects to Backend)
+  // --- 🔥 LOGIC UPDATE: Save to Local Storage & Fix Sorting ---
   const handlePlaceOrder = () => {
-    
-    // A. Prepare Order Data
     const orderData = {
+        _id: "ORD" + Math.floor(Math.random() * 1000000), // Random ID
+        user: user?._id || "guest",
+        restaurant: restaurantName,
         items: cartItems,
         totalAmount: grandTotal,
-        restaurant: restaurantName,
-        status: "Confirmed"
+        date: new Date().toISOString(),
+        status: "Delivered", // Simulating instant delivery for UI
+        deliveryAddress: deliveryDetails
     };
 
-    // B. Send to Backend API
-    fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData)
-    })
-    .then((res) => res.json())
-    .then(() => {
-        // C. Show Success Animation
-        setIsOrderPlaced(true);
-        
-        // D. Redirect after 2 seconds
-        setTimeout(() => {
-            navigate("/order-success");
-        }, 2000);
-    })
-    .catch((err) => {
-        alert("Failed to place order. Is the backend running?");
-        console.error(err);
-    });
+    // 1. Get existing orders from Local Storage
+    const existingOrders = JSON.parse(localStorage.getItem("my_orders") || "[]");
+
+    // 2. 🔥 THE FIX: Put the NEW order FIRST in the array [new, ...old]
+    const updatedOrders = [orderData, ...existingOrders];
+
+    // 3. Save back to Local Storage
+    localStorage.setItem("my_orders", JSON.stringify(updatedOrders));
+
+    // 4. Show Success Animation
+    setIsOrderPlaced(true);
+    setTimeout(() => {
+        navigate("/order-success");
+    }, 2000);
   };
 
-  // 4. Handle Empty Cart Case
+  // --- EMPTY CART STATE ---
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Cart is Empty 😕</h2>
-        <Link to="/delivery" className="bg-zomatoRed text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-red-600 transition">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-transparent">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 animate-fade-in-up">Your Cart is Empty 😕</h2>
+        <Link to="/delivery" className="bg-[#EF4F5F] text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-red-600 transition animate-fade-in-up delay-100">
           Browse Restaurants
         </Link>
       </div>
@@ -64,13 +86,14 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-10 pb-20 px-4">
+    // 🚨 Transparent background for gradient visibility
+    <div className="min-h-screen bg-transparent pt-10 pb-20 px-4 animate-fade-in">
       
       {/* --- SUCCESS MODAL --- */}
       {isOrderPlaced && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-           <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform scale-100 transition-transform">
-               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+           <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform scale-100 transition-transform animate-fade-in-up">
+               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                    <span className="text-4xl text-green-600">✓</span>
                </div>
                <h2 className="text-2xl font-bold text-gray-800 mb-2">Order Placed!</h2>
@@ -80,19 +103,48 @@ const Checkout = () => {
         </div>
       )}
 
+      {/* --- EDIT ADDRESS MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 className="font-bold text-lg text-gray-800">Edit Delivery Details</h3>
+                    <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors">&times;</button>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input type="text" name="name" value={tempDetails.name} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" name="email" value={tempDetails.email} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <textarea name="address" rows="3" value={tempDetails.address} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white resize-none" />
+                    </div>
+                </div>
+                <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition">Cancel</button>
+                    <button onClick={saveAddress} className="px-6 py-2 bg-[#EF4F5F] text-white font-bold rounded-lg hover:bg-red-600 shadow-md transition hover:-translate-y-0.5">Save Changes</button>
+                </div>
+            </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         
-        {/* LEFT SIDE: ITEM LIST & ADDRESS */}
+        {/* LEFT COLUMN */}
         <div className="md:col-span-2 space-y-6">
-           {/* Order Summary */}
-           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+           {/* Order Summary Card */}
+           <div className="glass-card p-6 rounded-2xl shadow-sm border border-white/50 animate-fade-in-up delay-100">
                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                 <span className="text-zomatoRed">🥡</span> Order Summary
+                 <span className="text-[#EF4F5F]">🥡</span> Order Summary
                </h2>
                <p className="text-sm text-gray-500 mb-6 uppercase tracking-wider font-semibold">From {restaurantName}</p>
-               
                {cartItems.map((item, index) => (
-                   <div key={index} className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                   <div key={index} className="flex justify-between items-center mb-4 border-b border-gray-200/60 pb-4 last:border-0 last:pb-0">
                        <div className="flex items-center gap-3">
                            <div className={`w-4 h-4 border flex items-center justify-center rounded-sm ${item.isVeg ? "border-green-600" : "border-red-600"}`}>
                                <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`}></div>
@@ -107,49 +159,38 @@ const Checkout = () => {
                ))}
            </div>
 
-           {/* Delivery Address */}
-           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+           {/* Address Card */}
+           <div className="glass-card p-6 rounded-2xl shadow-sm border border-white/50 animate-fade-in-up delay-200 group hover:border-red-200 transition-colors duration-300">
                <h2 className="text-xl font-bold text-gray-800 mb-4">📍 Delivery Address</h2>
-               <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+               <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl bg-white/50 group-hover:bg-white group-hover:shadow-md transition-all duration-300">
                    <div className="text-2xl">🏠</div>
                    <div>
-                       <h3 className="font-bold text-gray-800">{user?.name || "Guest User"}</h3>
-                       <p className="text-sm text-gray-500 leading-relaxed">
-                           {user?.email || "No contact info available."}
-                       </p>
-                       <p className="text-sm text-gray-500 leading-relaxed">Flat 402, Lotus Apartment, Gandhi Chowk, Hajipur, Bihar - 844101</p>
+                       <h3 className="font-bold text-gray-800">{deliveryDetails.name}</h3>
+                       <p className="text-sm text-gray-500 leading-relaxed">{deliveryDetails.email}</p>
+                       <p className="text-sm text-gray-500 leading-relaxed mt-1">{deliveryDetails.address}</p>
                    </div>
-                   <button className="ml-auto text-zomatoRed font-bold text-sm uppercase">Change</button>
+                   <button onClick={openEditModal} className="ml-auto text-[#EF4F5F] font-bold text-sm uppercase hover:underline">Change</button>
                </div>
            </div>
         </div>
 
-        {/* RIGHT SIDE: BILL SUMMARY */}
+        {/* RIGHT COLUMN */}
         <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
+            {/* Bill Details */}
+            <div className="glass-card p-6 rounded-2xl shadow-lg border border-white/50 sticky top-24 animate-fade-in-up delay-300">
                 <h2 className="text-lg font-bold text-gray-800 mb-6">Bill Details</h2>
-                
-                <div className="flex justify-between text-gray-600 mb-2">
-                    <span>Item Total</span>
-                    <span>₹{itemTotal}</span>
+                <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-gray-600"><span>Item Total</span><span>₹{itemTotal}</span></div>
+                    <div className="flex justify-between text-gray-600"><span>Delivery Fee</span><span>₹{deliveryFee}</span></div>
+                    <div className="flex justify-between text-gray-600"><span>Platform Fee</span><span>₹{platformFee}</span></div>
                 </div>
-                <div className="flex justify-between text-gray-600 mb-2">
-                    <span>Delivery Fee</span>
-                    <span>₹{deliveryFee}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 mb-4 border-b border-gray-200 pb-4">
-                    <span>Platform Fee</span>
-                    <span>₹{platformFee}</span>
-                </div>
-                
-                <div className="flex justify-between text-gray-800 font-bold text-xl mb-6">
+                <div className="border-t border-gray-200 pt-4 mb-6 flex justify-between text-gray-800 font-bold text-xl">
                     <span>TO PAY</span>
                     <span>₹{grandTotal}</span>
                 </div>
-
                 <button 
                   onClick={handlePlaceOrder}
-                  className="w-full bg-zomatoRed text-white py-4 rounded-lg font-bold text-lg hover:bg-red-600 transition shadow-lg transform active:scale-95 flex justify-center items-center gap-2"
+                  className="w-full bg-[#EF4F5F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-200 hover:-translate-y-1 active:translate-y-0 active:scale-95 flex justify-center items-center gap-2"
                 >
                   Place Order <span className="text-xl">➔</span>
                 </button>

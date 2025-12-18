@@ -1,165 +1,183 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUserCircle, FaSearch, FaCaretDown, FaBars, FaTimes, FaMapMarkerAlt } from "react-icons/fa";
+import {
+  FaSearch,
+  FaCaretDown,
+  FaBars,
+  FaTimes,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
-// --- BIG LIST OF CITIES ---
 const cities = [
-    "Hajipur", "Patna", "Delhi NCR", "Mumbai", "Bengaluru", "Pune", "Hyderabad", 
-    "Chennai", "Kolkata", "Ahmedabad", "Chandigarh", "Jaipur", "Lucknow", "Indore", 
-    "Agra", "Shimla", "Goa", "Varanasi", "Surat", "Bhopal", "Visakhapatnam"
+  "Hajipur","Patna","Delhi NCR","Mumbai","Bengaluru","Pune","Hyderabad",
+  "Chennai","Kolkata","Ahmedabad","Chandigarh","Jaipur","Lucknow","Indore",
+  "Agra","Shimla","Goa","Varanasi","Surat","Bhopal","Visakhapatnam"
 ];
 
 const Navbar = ({ setSearchTerm, city, setCity }) => {
-    const [localSearch, setLocalSearch] = useState("");
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
-    const navigate = useNavigate();
-    const { user, logout, setUser } = useAuth(); 
+  const [localSearch, setLocalSearch] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // 1. New State for Profile Dropdown
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        setSearchTerm(localSearch);
-        navigate("/delivery"); 
-    };
+  const navigate = useNavigate();
+  const { user, logout, setUser } = useAuth();
 
-    const handleLogout = () => {
-        logout();
-        setUser(null);
-        navigate("/");
-    };
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setSearchTerm(localSearch);
+    navigate("/delivery");
+  };
 
-    return (
-        <nav className="bg-white sticky top-0 z-50 shadow-md">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    
-                    {/* --- 1. Logo --- */}
-                    <Link to="/home" className="flex-shrink-0">
-                        <h1 className="text-3xl font-extrabold text-black italic tracking-tight">
-                            somato
-                        </h1>
-                    </Link>
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+    setIsProfileOpen(false); // Close dropdown on logout
+    navigate("/");
+  };
 
-                    {/* --- 2. CENTER SEARCH BAR WITH LOCATION (Hidden on mobile) --- */}
-                    <div className="hidden md:flex flex-grow max-w-2xl mx-8 shadow-sm border border-gray-200 rounded-lg bg-white h-12">
-                        
-                        {/* Location Selector Section */}
-                        <div className="flex items-center w-1/3 border-r border-gray-200 px-3">
-                            <FaMapMarkerAlt className="text-zomatoRed text-lg mr-2" />
-                            <select 
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                className="w-full bg-transparent outline-none text-gray-700 cursor-pointer text-sm truncate"
-                            >
-                                {cities.sort().map((cityOption) => (
-                                    <option key={cityOption} value={cityOption}>{cityOption}</option>
-                                ))}
-                            </select>
-                        </div>
+  return (
+    <nav className="sticky top-0 z-[100] bg-[#F4F6FB] border-b border-[#E8E8E8]">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="h-[72px] flex items-center justify-between gap-6">
 
-                        {/* Search Input Section */}
-                        <form onSubmit={handleSearch} className="flex items-center w-2/3 px-3">
-                            <FaSearch className="text-gray-400 text-lg mr-2" />
-                            <input
-                                type="text"
-                                placeholder="Search for restaurant, cuisine..."
-                                value={localSearch}
-                                onChange={(e) => setLocalSearch(e.target.value)}
-                                className="w-full bg-transparent outline-none text-gray-700 text-sm"
-                            />
-                        </form>
-                    </div>
+          {/* LOGO */}
+          <Link to="/home">
+            <h1 className="text-3xl font-bold italic text-[#EF4F5F]">
+              somato
+            </h1>
+          </Link>
 
-                    {/* --- 3. Right Section: Auth/Profile --- */}
-                    <div className="flex items-center space-x-4">
-                        {user ? (
-                            <div className="relative group">
-                                <button className="flex items-center text-gray-700 font-medium p-2 rounded-full hover:bg-gray-100 transition">
-                                    <img src={user.image} alt="User" className="w-8 h-8 rounded-full mr-2 border border-gray-300" />
-                                    <span className="text-lg hidden sm:inline">{user.name || "User"}</span>
-                                    <FaCaretDown className="ml-1 text-xs" />
-                                </button>
-                                
-                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        Profile
-                                    </Link>
-                                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                        Log Out
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-4">
-                                <Link to="/login" className="text-lg text-gray-400 font-light hover:text-gray-600 transition">
-                                    Log in
-                                </Link>
-                                <Link to="/login" className="text-lg text-gray-400 font-light hover:text-gray-600 transition">
-                                    Sign up
-                                </Link>
-                            </div>
-                        )}
-                        
-                        <button 
-                            className="text-xl text-gray-700 md:hidden ml-2" 
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        >
-                            {isMenuOpen ? <FaTimes /> : <FaBars />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* --- 4. Mobile Menu --- */}
-                {isMenuOpen && (
-                    <div className="md:hidden pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
-                        {/* Mobile Location Selector */}
-                        <div className="flex items-center border border-gray-300 rounded-lg p-2 mb-2 bg-white">
-                            <FaMapMarkerAlt className="text-zomatoRed mr-2" />
-                            <select 
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                className="w-full bg-transparent outline-none text-gray-700"
-                            >
-                                {cities.sort().map((cityOption) => (
-                                    <option key={cityOption} value={cityOption}>{cityOption}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Mobile Search */}
-                        <form onSubmit={handleSearch} className="flex w-full mb-3 border border-gray-300 rounded-lg overflow-hidden bg-white">
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={localSearch}
-                                onChange={(e) => setLocalSearch(e.target.value)}
-                                className="flex-grow p-2 text-sm focus:outline-none"
-                            />
-                             <button type="submit" className="bg-zomatoRed text-white px-3 hover:bg-red-600 transition">
-                                <FaSearch />
-                            </button>
-                        </form>
-                        
-                        {user ? (
-                            <>
-                                <Link to="/profile" className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
-                                    Profile
-                                </Link>
-                                <button onClick={handleLogout} className="w-full text-left block px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md">
-                                    Log Out
-                                </button>
-                            </>
-                        ) : (
-                            <Link to="/login" className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
-                                Log In / Sign Up
-                            </Link>
-                        )}
-                    </div>
-                )}
+          {/* LOCATION + SEARCH */}
+          <div className="hidden md:flex items-center w-[520px] bg-[#F8FAFC] border border-[#E8E8E8] rounded-lg px-4 py-2 gap-3 shadow-sm">
+            {/* Location */}
+            <div className="flex items-center gap-2 text-[#EF4F5F] font-medium">
+              <FaMapMarkerAlt />
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="bg-transparent outline-none cursor-pointer text-sm text-[#333]"
+              >
+                {cities.sort().map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
-        </nav>
-    );
+
+            <div className="h-5 w-px bg-[#E8E8E8]" />
+
+            {/* Search */}
+            <form onSubmit={handleSearch} className="flex items-center gap-2 flex-1">
+              <FaSearch className="text-[#828282]" />
+              <input
+                type="text"
+                placeholder="Search for restaurant, cuisine..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="w-full bg-transparent outline-none text-sm text-[#333]"
+              />
+            </form>
+          </div>
+
+          {/* USER PROFILE SECTION */}
+          {user ? (
+            <div className="relative">
+              {/* 2. Added onClick to toggle state and cursor-pointer */}
+              <div 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 bg-[#EF4F5F] text-white px-4 py-2 rounded-full text-sm font-medium cursor-pointer hover:bg-[#e03e4e] transition-colors select-none"
+              >
+                <span className="bg-white text-[#EF4F5F] rounded-full px-2 py-1 text-xs font-bold">
+                  {user.name?.[0] || "U"}
+                </span>
+                {user.name || "User"}
+                <FaCaretDown className={`text-xs transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} />
+              </div>
+
+              {/* 3. The Actual Dropdown Menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                  <Link 
+                    to="/profile" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#EF4F5F]"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <div className="h-px bg-gray-100 my-1"></div>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#EF4F5F]"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="hidden md:flex gap-4 text-[#696969] text-lg font-light">
+              <Link to="/login" className="hover:text-[#EF4F5F]">Log in</Link>
+              <Link to="/login" className="hover:text-[#EF4F5F]">Sign up</Link>
+            </div>
+          )}
+
+          {/* MOBILE TOGGLE */}
+          <button
+            className="md:hidden text-xl text-[#696969]"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
+
+        {/* MOBILE MENU */}
+        {isMenuOpen && (
+          <div className="md:hidden mt-2 p-3 bg-[#F8FAFC] border border-[#E8E8E8] rounded-lg space-y-3 shadow-lg">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <input
+                className="flex-1 border border-[#E8E8E8] rounded-lg px-3 py-2 text-sm outline-none"
+                placeholder="Search..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+              />
+              <button className="bg-[#EF4F5F] text-white px-4 rounded-lg">
+                <FaSearch />
+              </button>
+            </form>
+
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="w-full border border-[#E8E8E8] rounded-lg px-3 py-2 text-sm outline-none bg-white"
+            >
+              {cities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+
+            {user ? (
+              <>
+                <Link to="/profile" className="block text-gray-700 text-sm font-medium py-1">Profile</Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 text-sm font-medium w-full text-left py-1"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    <Link to="/login" className="text-gray-600">Log in</Link>
+                    <Link to="/signup" className="text-gray-600">Sign up</Link>
+                </div>
+            )}
+          </div>
+        )}
+      </div>
+    </nav>
+  );
 };
 
 export default Navbar;
