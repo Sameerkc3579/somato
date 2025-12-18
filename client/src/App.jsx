@@ -1,6 +1,4 @@
-// client/src/App.jsx
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // --- CONTEXT ---
@@ -25,7 +23,16 @@ import Collection from "./pages/Collection";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [city, setCity] = useState("Hajipur");
+  
+  // 1. UPDATED: Initialize City from Local Storage or default to 'Hajipur'
+  const [city, setCity] = useState(() => {
+    return localStorage.getItem("userCity") || "Hajipur";
+  });
+
+  // 2. ADDED: Save City to Local Storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("userCity", city);
+  }, [city]);
 
   // 1. Get the current URL path
   const location = useLocation();
@@ -49,16 +56,18 @@ const App = () => {
         {/* Redirect Root to Home */}
         <Route path="/" element={<Navigate to="/home" />} />
         
-        {/* Home Page (Has its own internal Navbar/Footer now) */}
+        {/* Home Page */}
         <Route path="/home" element={<Home city={city} setCity={setCity} />} />
         
-        {/* MAIN TAB ROUTES - Wrapped by MainLayout */}
+        {/* MAIN TAB ROUTES */}
         <Route path="/delivery" element={<MainLayout><Delivery searchTerm={searchTerm} city={city} /></MainLayout>} />
         <Route path="/dining-out" element={<MainLayout><DiningOut key={city} city={city} /></MainLayout>} />
         <Route path="/nightlife" element={<MainLayout><Nightlife key={city} city={city} /></MainLayout>} />
         
         {/* Other Routes */}
-        <Route path="/restaurant/:id" element={<RestaurantPage />} />
+        {/* 👇 UPDATED: Passing 'city' prop here 👇 */}
+        <Route path="/restaurant/:id" element={<RestaurantPage city={city} />} />
+        
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-success" element={<OrderSuccess />} />
         <Route path="/profile" element={<Profile />} />
@@ -66,8 +75,8 @@ const App = () => {
         <Route path="/collections/:type" element={<Collection />} />
       </Routes>
       
-      {/* 4. Only show Global Footer if NOT on Home Page */}
-      {!isHomePage && <Footer />}
+      {/* 4. Footer shows on ALL pages */}
+      <Footer />
       
     </AuthProvider>
   );
