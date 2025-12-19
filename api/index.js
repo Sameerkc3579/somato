@@ -3,15 +3,11 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 
-// --- IMPORT MODELS ---
-const Restaurant = require("./models/Restaurant"); 
-const Order = require("./models/Order"); 
-
 dotenv.config();
 
 const app = express();
 
-// ✅ FIX 1: CORS Configuration
+// ✅ FIX 1: CORS Configuration (Allows access from anywhere)
 app.use(cors({
   origin: "*", 
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -21,12 +17,32 @@ app.use(cors({
 app.use(express.json());
 
 // --- DB CONNECTION ---
-// ⚠️ REPLACE WITH YOUR ACTUAL CONNECTION STRING IF DIFFERENT
-const MONGO_URI = "mongodb+srv://sameer24102_db_user:4LBenngubNHjGoz4@cluster0.kx9t3ok.mongodb.net/?appName=Cluster0";
+// Uses your provided connection string
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://sameer24102_db_user:4LBenngubNHjGoz4@cluster0.kx9t3ok.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected Successfully!"))
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
+
+// --- 🔥 THE FIX: INLINE FLEXIBLE MODELS ---
+// We define the models here with { strict: false } so MongoDB
+// accepts whatever data we send without crashing (Fixes the 500 Error).
+
+const OrderSchema = new mongoose.Schema({
+  userEmail: String,
+  restaurant: String,
+  totalAmount: Number,
+  status: { type: String, default: "Confirmed" },
+  items: [], // Flexible array
+  deliveryAddress: {}, // Flexible object
+  date: { type: Date, default: Date.now }
+}, { strict: false });
+
+const RestaurantSchema = new mongoose.Schema({}, { strict: false });
+
+// Prevent model overwrite errors if this file reloads
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
+const Restaurant = mongoose.models.Restaurant || mongoose.model("Restaurant", RestaurantSchema);
 
 // --- ROUTES ---
 
@@ -64,31 +80,35 @@ app.get("/api/restaurants/:id", async (req, res) => {
   }
 });
 
-// 3. SAVE ORDER (✅ UPDATED to save User Email & Address)
+// 3. SAVE ORDER (✅ UPDATED with Debugging Log)
 app.post("/api/orders", async (req, res) => {
   try {
+    console.log("📥 Receiving Order Payload:", JSON.stringify(req.body)); // Log input for Vercel
+
     const { items, totalAmount, restaurant, userEmail, deliveryAddress } = req.body;
     
-    // Create new order with all details
+    // Create new order (Mongoose will now accept it easily due to strict:false)
     const newOrder = new Order({ 
-      userEmail: userEmail || "guest@example.com", // Save who ordered it
+      userEmail: userEmail || "guest@example.com", 
       items, 
       totalAmount, 
       restaurant: restaurant || "Unknown",
-      deliveryAddress: deliveryAddress // Save address details
+      deliveryAddress: deliveryAddress,
+      status: "Confirmed"
     });
     
     const savedOrder = await newOrder.save();
+    console.log("✅ Order Saved Successfully:", savedOrder._id);
     res.json(savedOrder);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("❌ ORDER SAVE FAILED:", error);
+    res.status(500).json({ message: "Server Error: " + error.message });
   }
 });
 
-// 3.5 GET ORDER HISTORY (Can filter by user if needed)
+// 3.5 GET ORDER HISTORY
 app.get("/api/orders", async (req, res) => {
   try {
-    // If you send ?email=... in the URL, this filters it. Otherwise gets all.
     const { email } = req.query;
     const filter = email ? { userEmail: email } : {};
     
@@ -99,24 +119,20 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
-// 3.5 GET COLLECTIONS (Updated for Nightlife & Counts)
+// 3.5 GET COLLECTIONS
 app.get("/api/collections/:type", async (req, res) => {
   try {
     const { type } = req.params;
     let query = {};
 
     if (type === "trending") {
-      // Rating 4.0+ counts as trending
       query = { rating: { $gte: 4.0 } };
     } else if (type === "veggie") {
-      // Strictly vegetarian places
       query = { isVeg: true };
     } else if (type === "new") {
-      // Sort by newest created
       const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
       return res.json(results);
     } else if (type === "events") {
-      // "Nightlife" -> Look for Bar, Pub, or specific cuisines
       query = { 
         $or: [
           { cuisine: { $regex: "Bar", $options: "i" } },
@@ -133,7 +149,7 @@ app.get("/api/collections/:type", async (req, res) => {
   }
 });
 
-// 4. SEED ROUTE (Full Data)
+// 4. SEED ROUTE (Your Full Data Logic)
 app.get("/api/seed", async (req, res) => {
   try {
     const baseData = {
@@ -269,19 +285,13 @@ app.get("/api/fix-data", async (req, res) => {
     const restaurants = await Restaurant.find();
     
     for (const r of restaurants) {
-      // 1. Give random rating between 3.5 and 5.0
       r.rating = (Math.random() * (5.0 - 3.5) + 3.5).toFixed(1);
-
-      // 2. Make 30% of restaurants Vegetarian
       r.isVeg = Math.random() < 0.3; 
-
-      // 3. Make 10% of restaurants "Nightlife" (Bar/Pub)
       if (Math.random() < 0.1) {
         if (!r.cuisine.includes("Bar")) {
             r.cuisine = r.cuisine + ", Bar, Pub";
         }
       }
-      
       await r.save();
     }
     
@@ -294,35 +304,18 @@ app.get("/api/fix-data", async (req, res) => {
 // --- BRUTE FORCE VEGGIE FIX ---
 app.get("/api/force-veggie", async (req, res) => {
   try {
-    // 1. Get the first 10 restaurants from the database (Any 10)
     const restaurants = await Restaurant.find().limit(10);
-
-    if (restaurants.length === 0) {
-      return res.status(404).json({ message: "ERROR: Database is empty. No restaurants to update." });
-    }
+    if (restaurants.length === 0) return res.status(404).json({ message: "DB Empty" });
 
     const updatedNames = [];
-
-    // 2. Loop through them and FORCE isVeg = true
     for (const r of restaurants) {
       r.isVeg = true; 
-      
-      // Optional: Add "Veg" to cuisine name just so you can see it changed
-      if (!r.cuisine.includes("Veg")) {
-         r.cuisine = r.cuisine + " (Pure Veg)";
-      }
-      
+      if (!r.cuisine.includes("Veg")) r.cuisine = r.cuisine + " (Pure Veg)";
       await r.save();
       updatedNames.push(r.name);
     }
 
-    // 3. Send back the names of the places we updated
-    res.json({
-      message: "SUCCESS! Force-updated these 10 restaurants to be Veggie:",
-      total_updated: updatedNames.length,
-      names: updatedNames
-    });
-
+    res.json({ message: "SUCCESS!", names: updatedNames });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -331,15 +324,12 @@ app.get("/api/force-veggie", async (req, res) => {
 // --- TRUTH CHECKER ROUTE ---
 app.get("/api/check-db", async (req, res) => {
   try {
-    // Get one restaurant
     const r = await Restaurant.findOne();
-    
     res.json({
       message: "Here is the raw data for one restaurant. Look for 'isVeg'.",
-      restaurant_name: r.name,
-      // We check if the field exists AT ALL
-      has_isVeg_field: r.isVeg !== undefined,
-      isVeg_value: r.isVeg,
+      restaurant_name: r?.name,
+      has_isVeg_field: r?.isVeg !== undefined,
+      isVeg_value: r?.isVeg,
       full_data: r
     });
   } catch (error) {
