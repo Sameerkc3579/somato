@@ -59,12 +59,15 @@ const Login = () => {
 
                 // Step B: 🔥 NEW - Save User to Database (Server)
                 try {
-                    // ⚠️ IMPORTANT: If testing on Mobile, replace 'localhost' with your Laptop IP (e.g., http://192.168.1.5:4000)
-                    // If deploying to Vercel, use your Vercel URL here.
-                    await axios.post("http://localhost:4000/api/users", googleUser);
+                    // ⚠️ AUTO-DETECT: Uses localhost if running locally, or Vercel if online.
+                    const backendUrl = window.location.hostname === "localhost" 
+                        ? "http://localhost:4000/api/users"
+                        : "https://somato-new.vercel.app/api/users"; // Replace with your actual Vercel URL
+
+                    await axios.post(backendUrl, googleUser);
                     console.log("✅ User saved to database successfully!");
                 } catch (dbError) {
-                    console.error("❌ Failed to save user to DB (Server might be offline):", dbError);
+                    console.error("❌ Failed to save user to DB:", dbError);
                     // We continue anyway so the user can still login locally
                 }
 
