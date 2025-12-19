@@ -7,6 +7,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth(); 
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // --- STATE FOR ADDRESS MANAGEMENT ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,33 +45,45 @@ const Checkout = () => {
   const platformFee = 10;
   const grandTotal = itemTotal + deliveryFee + platformFee;
 
-  // --- 🔥 LOGIC UPDATE: Save to Local Storage & Fix Sorting ---
-  const handlePlaceOrder = () => {
+  // --- 🔥 LOGIC UPDATE: Save to Database (MongoDB) ---
+  const handlePlaceOrder = async () => {
+    setLoading(true);
+
+    // 1. Prepare Order Data with User Email
     const orderData = {
-        _id: "ORD" + Math.floor(Math.random() * 1000000), // Random ID
-        user: user?._id || "guest",
+        userEmail: user?.email || "guest@example.com", // CRITICAL: This connects the order to your account
         restaurant: restaurantName,
         items: cartItems,
         totalAmount: grandTotal,
-        date: new Date().toISOString(),
-        status: "Delivered", // Simulating instant delivery for UI
-        deliveryAddress: deliveryDetails
+        deliveryAddress: deliveryDetails,
+        status: "Confirmed" 
     };
 
-    // 1. Get existing orders from Local Storage
-    const existingOrders = JSON.parse(localStorage.getItem("my_orders") || "[]");
+    try {
+        // 2. Send Data to Server (Change localhost to IP if using real phone)
+        const response = await fetch("https://somato-new.vercel.app/api/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(orderData),
+        });
 
-    // 2. 🔥 THE FIX: Put the NEW order FIRST in the array [new, ...old]
-    const updatedOrders = [orderData, ...existingOrders];
-
-    // 3. Save back to Local Storage
-    localStorage.setItem("my_orders", JSON.stringify(updatedOrders));
-
-    // 4. Show Success Animation
-    setIsOrderPlaced(true);
-    setTimeout(() => {
-        navigate("/order-success");
-    }, 2000);
+        if (response.ok) {
+            // 3. Show Success Animation
+            setIsOrderPlaced(true);
+            setTimeout(() => {
+                navigate("/order-success");
+            }, 2000);
+        } else {
+            alert("Failed to place order on server.");
+        }
+    } catch (error) {
+        console.error("Order Error:", error);
+        alert("Server not responding. Is your backend running?");
+    } finally {
+        setLoading(false);
+    }
   };
 
   // --- EMPTY CART STATE ---
@@ -86,7 +99,6 @@ const Checkout = () => {
   }
 
   return (
-    // 🚨 Transparent background for gradient visibility
     <div className="min-h-screen bg-transparent pt-10 pb-20 px-4 animate-fade-in">
       
       {/* --- SUCCESS MODAL --- */}
@@ -190,9 +202,10 @@ const Checkout = () => {
                 </div>
                 <button 
                   onClick={handlePlaceOrder}
-                  className="w-full bg-[#EF4F5F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-200 hover:-translate-y-1 active:translate-y-0 active:scale-95 flex justify-center items-center gap-2"
+                  disabled={loading}
+                  className="w-full bg-[#EF4F5F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-200 hover:-translate-y-1 active:translate-y-0 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Place Order <span className="text-xl">➔</span>
+                  {loading ? "Processing..." : "Place Order ➔"}
                 </button>
             </div>
         </div>

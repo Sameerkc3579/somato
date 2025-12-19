@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 
 // --- IMPORT MODELS ---
-// Ensure these files exist in api/models/
 const Restaurant = require("./models/Restaurant"); 
 const Order = require("./models/Order"); 
 
@@ -22,7 +21,10 @@ app.use(cors({
 app.use(express.json());
 
 // --- DB CONNECTION ---
-mongoose.connect("mongodb+srv://sameer24102_db_user:4LBenngubNHjGoz4@cluster0.kx9t3ok.mongodb.net/?appName=Cluster0")
+// ⚠️ REPLACE WITH YOUR ACTUAL CONNECTION STRING IF DIFFERENT
+const MONGO_URI = "mongodb+srv://sameer24102_db_user:4LBenngubNHjGoz4@cluster0.kx9t3ok.mongodb.net/?appName=Cluster0";
+
+mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected Successfully!"))
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
@@ -62,11 +64,20 @@ app.get("/api/restaurants/:id", async (req, res) => {
   }
 });
 
-// 3. SAVE ORDER
+// 3. SAVE ORDER (✅ UPDATED to save User Email & Address)
 app.post("/api/orders", async (req, res) => {
   try {
-    const { items, totalAmount, restaurant } = req.body;
-    const newOrder = new Order({ items, totalAmount, restaurant: restaurant || "Unknown" });
+    const { items, totalAmount, restaurant, userEmail, deliveryAddress } = req.body;
+    
+    // Create new order with all details
+    const newOrder = new Order({ 
+      userEmail: userEmail || "guest@example.com", // Save who ordered it
+      items, 
+      totalAmount, 
+      restaurant: restaurant || "Unknown",
+      deliveryAddress: deliveryAddress // Save address details
+    });
+    
     const savedOrder = await newOrder.save();
     res.json(savedOrder);
   } catch (error) {
@@ -74,43 +85,20 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
-// 3.5 GET ORDER HISTORY (This was missing!)
+// 3.5 GET ORDER HISTORY (Can filter by user if needed)
 app.get("/api/orders", async (req, res) => {
   try {
-    const orders = await Order.find().sort({ date: -1 });
+    // If you send ?email=... in the URL, this filters it. Otherwise gets all.
+    const { email } = req.query;
+    const filter = email ? { userEmail: email } : {};
+    
+    const orders = await Order.find(filter).sort({ date: -1 });
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// 3.5 GET COLLECTIONS (New Filter Route)
-app.get("/api/collections/:type", async (req, res) => {
-  try {
-    const { type } = req.params;
-    let query = {};
-
-    if (type === "trending") {
-      // Logic: Rating 4.0 or higher
-      query = { rating: { $gte: 4.0 } };
-    } else if (type === "veggie") {
-      // Logic: Only vegetarian
-      query = { isVeg: true };
-    } else if (type === "new") {
-      // Logic: Just show the most recently added (sorted by ID)
-      const results = await Restaurant.find().sort({ _id: -1 }).limit(10);
-      return res.json(results);
-    } else if (type === "events") {
-      // Logic: High rating & Expensive (simulating "Events/Premium")
-      query = { rating: { $gte: 4.5 } };
-    }
-
-    const results = await Restaurant.find(query);
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 // 3.5 GET COLLECTIONS (Updated for Nightlife & Counts)
 app.get("/api/collections/:type", async (req, res) => {
   try {
@@ -302,6 +290,7 @@ app.get("/api/fix-data", async (req, res) => {
     res.status(500).send("Error updating data: " + error.message);
   }
 });
+
 // --- BRUTE FORCE VEGGIE FIX ---
 app.get("/api/force-veggie", async (req, res) => {
   try {
@@ -359,8 +348,6 @@ app.get("/api/check-db", async (req, res) => {
 });
 
 // ✅ FIX 2: Vercel Conditional Listen
-// Only listen on a port if we are NOT on Vercel. 
-// Vercel handles the connection automatically in production.
 const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
