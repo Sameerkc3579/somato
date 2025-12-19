@@ -45,6 +45,7 @@ const Login = () => {
         onSuccess: async (tokenResponse) => {
             setIsLoading(true);
             try {
+                // Step A: Get User Info from Google
                 const accessToken = tokenResponse.access_token;
                 const res = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
                     headers: { Authorization: `Bearer ${accessToken}` },
@@ -56,6 +57,18 @@ const Login = () => {
                     image: res.data.picture,
                 };
 
+                // Step B: 🔥 NEW - Save User to Database (Server)
+                try {
+                    // ⚠️ IMPORTANT: If testing on Mobile, replace 'localhost' with your Laptop IP (e.g., http://192.168.1.5:4000)
+                    // If deploying to Vercel, use your Vercel URL here.
+                    await axios.post("http://localhost:4000/api/users", googleUser);
+                    console.log("✅ User saved to database successfully!");
+                } catch (dbError) {
+                    console.error("❌ Failed to save user to DB (Server might be offline):", dbError);
+                    // We continue anyway so the user can still login locally
+                }
+
+                // Step C: Login locally & Redirect
                 login(googleUser);
                 setIsLoading(false);
                 navigate("/"); 

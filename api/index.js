@@ -44,11 +44,50 @@ const RestaurantSchema = new mongoose.Schema({}, { strict: false });
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
 const Restaurant = mongoose.models.Restaurant || mongoose.model("Restaurant", RestaurantSchema);
 
+// --- USER SCHEMA (To track logins) ---
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true }, // Ensure email is unique
+  image: String,
+  lastLogin: { type: Date, default: Date.now }
+}, { strict: false });
+
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
+
 // --- ROUTES ---
 
 // Test Route
 app.get("/", (req, res) => {
   res.send("<h1>Server is Running... 🚀</h1>");
+});
+
+// 7. SAVE USER (Call this after Google Login)
+app.post("/api/users", async (req, res) => {
+  try {
+    const { name, email, image } = req.body;
+    
+    // Find if user exists. If yes, update "lastLogin". If no, create new.
+    const user = await User.findOneAndUpdate(
+      { email: email }, 
+      { name, email, image, lastLogin: new Date() },
+      { upsert: true, new: true } // "upsert" means update or insert
+    );
+    
+    console.log("👤 User Logged In:", user.name);
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 8. GET ALL USERS (Admin View)
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find().sort({ lastLogin: -1 }); // Newest login first
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // 1. GET ALL RESTAURANTS

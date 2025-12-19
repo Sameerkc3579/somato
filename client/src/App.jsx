@@ -20,6 +20,7 @@ import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Profile from "./pages/Profile"; 
 import Collection from "./pages/Collection";
+import AdminUsers from "./pages/AdminUsers";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,7 +56,7 @@ const App = () => {
       <Routes>
         {/* Redirect Root to Home */}
         <Route path="/" element={<Navigate to="/home" />} />
-        
+        <Route path="/admin/users" element={<AdminUsers />} />
         {/* Home Page */}
         <Route path="/home" element={<Home city={city} setCity={setCity} />} />
         
