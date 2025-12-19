@@ -1,24 +1,35 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 // 1. Create the Context
 const AuthContext = createContext();
 
 // 2. Create the Provider Component
 export const AuthProvider = ({ children }) => {
-    // ✅ PRE-FILLED USER (Matches your Screenshot)
-    // This allows you to see the Profile page immediately without logging in.
-    const [user, setUser] = useState({
-        name: "Sameer choudhary",
-        email: "imexperiment4@gmail.com",
-        image: "https://ui-avatars.com/api/?name=Sameer+Choudhary&background=6336a8&color=fff&size=128" // Generates the Purple 'S' Avatar
+    
+    // 🔥 THE FIX: Check Local Storage first. Default to NULL if empty.
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem("user");
+        return savedUser ? JSON.parse(savedUser) : null;
     });
+
+    // 3. Update Local Storage whenever the user state changes
+    useEffect(() => {
+        if (user) {
+            localStorage.setItem("user", JSON.stringify(user));
+        } else {
+            localStorage.removeItem("user");
+        }
+    }, [user]);
 
     const login = (userData) => {
         setUser(userData);
+        // (The useEffect above handles saving to localStorage automatically)
     };
 
     const logout = () => {
         setUser(null);
+        localStorage.removeItem("user"); // Clear user data
+        localStorage.removeItem("cart"); // Optional: Clear cart on logout
     };
 
     const value = {
@@ -35,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-// 3. Custom Hook to consume the Auth context
+// 3. Custom Hook
 export const useAuth = () => {
     return useContext(AuthContext);
 };
