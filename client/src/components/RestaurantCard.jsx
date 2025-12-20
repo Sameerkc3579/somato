@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const RestaurantCard = ({ info, currentCity }) => {
+  const { user } = useAuth();
+  const [isLiked, setIsLiked] = useState(false);
+
   if (!info) return null;
 
   const {
@@ -18,11 +23,88 @@ const RestaurantCard = ({ info, currentCity }) => {
 
   const restaurantId = id || _id;
 
+  // --- 1. CHECK DATABASE ON LOAD (Keeps the heart Red if liked) ---
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!user?.email) return;
+
+      try {
+        const baseUrl = window.location.hostname === "localhost" 
+            ? "http://localhost:4000" 
+            : "https://somato-new.vercel.app";
+
+        const response = await fetch(`${baseUrl}/api/favorites?email=${user.email}`);
+        if (response.ok) {
+          const favorites = await response.json();
+          // Check if THIS restaurant is already in the list
+          const isFav = favorites.some(fav => fav.restaurantName === name);
+          setIsLiked(isFav);
+        }
+      } catch (error) {
+        console.error("Error checking favorite:", error);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [user, name]);
+
+  // --- 2. TOGGLE FAVORITE (Save to DB) ---
+  const toggleFavorite = async (e) => {
+    e.preventDefault(); // Stop link click
+    e.stopPropagation();
+
+    if (!user) {
+      alert("Please login to save favorites!");
+      return;
+    }
+
+    // Optimistic UI Update (Turn Red/White immediately)
+    const previousState = isLiked;
+    setIsLiked(!isLiked);
+
+    try {
+      const baseUrl = window.location.hostname === "localhost" 
+          ? "http://localhost:4000" 
+          : "https://somato-new.vercel.app";
+
+      if (!previousState) {
+        // --- ADD TO FAVORITES ---
+        const res = await fetch(`${baseUrl}/api/favorites/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userEmail: user.email,
+            restaurantName: name,
+            image: image,
+            cuisine: cuisine,
+            rating: rating,
+            time: deliveryTime
+          })
+        });
+        if(res.ok) console.log("Added to Favorites");
+      } else {
+        // --- REMOVE FROM FAVORITES ---
+        const res = await fetch(`${baseUrl}/api/favorites/remove`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: user.email,
+            restaurantName: name
+          })
+        });
+        if(res.ok) console.log("Removed from Favorites");
+      }
+    } catch (error) {
+      console.error("Network Error:", error);
+      setIsLiked(previousState); // Revert UI if failed
+    }
+  };
+
   return (
     <Link 
         to={`/restaurant/${restaurantId}`} 
         state={{ restaurant: info, selectedCity: currentCity }}
-        className="block h-full" 
+        className="block h-full relative" 
     >
       <div className="group h-full bg-white rounded-2xl overflow-hidden border border-transparent hover:border-gray-200 hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-2 flex flex-col cursor-pointer">
         
@@ -38,6 +120,18 @@ const RestaurantCard = ({ info, currentCity }) => {
           />
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+
+          {/* ❤️ HEART BUTTON */}
+          <button 
+            onClick={toggleFavorite}
+            className="absolute top-3 right-3 z-20 p-2 bg-white/20 backdrop-blur-md rounded-full hover:bg-white hover:scale-110 transition-all duration-200 shadow-sm group-hover:shadow-md"
+          >
+            <Heart 
+                size={20} 
+                fill={isLiked ? "#EF4F5F" : "transparent"} 
+                className={isLiked ? "text-[#EF4F5F]" : "text-white"} 
+            />
+          </button>
 
           {discount && (
             <div className="absolute bottom-4 left-0 bg-[#256fef] text-white text-[10px] font-bold px-2 py-[2px] rounded-r uppercase tracking-wide shadow-sm">

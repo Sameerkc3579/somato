@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 
 dotenv.config();
 
+const favoriteRoutes = require('./routes/favorites');
 const app = express();
 
 // ✅ FIX 1: CORS Configuration (Allows access from anywhere)
@@ -376,6 +377,7 @@ app.get("/api/check-db", async (req, res) => {
   }
 });
 
+app.use('/api/favorites', favoriteRoutes);
 // ✅ FIX 2: Vercel Conditional Listen
 const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV !== 'production') {

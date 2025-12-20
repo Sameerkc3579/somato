@@ -1,218 +1,473 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; 
+import { useAuth } from "../context/AuthContext";
+import { motion, AnimatePresence } from "framer-motion"; 
+import { ArrowLeft, ShoppingBag, MapPin, CheckCircle, Sparkles, Star, Zap, Gift, TrendingUp } from 'lucide-react';
 
-const Checkout = () => { 
-  const { state } = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth(); 
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
-  const [loading, setLoading] = useState(false);
+const Checkout = () => {
+    const { state } = useLocation();
+    const navigate = useNavigate();
+    const { user } = useAuth();
 
-  // --- STATE FOR ADDRESS MANAGEMENT ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    // --- UI STATE ---
+    const [isOrderPlaced, setIsOrderPlaced] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [deliveryDetails, setDeliveryDetails] = useState({
-    name: user?.name || "Guest",
-    email: user?.email || "guest@example.com",
-    address: "Flat 402, Lotus Apartment, Gandhi Chowk, Hajipur, Bihar - 844101"
-  });
+    // --- DATA ---
+    const cartItems = state?.cartItems || [];
+    const restaurantName = state?.restaurantName || "Restaurant";
+    const itemTotal = state?.totalPrice || 0;
+    const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
-  const [tempDetails, setTempDetails] = useState({ ...deliveryDetails });
+    const [deliveryDetails, setDeliveryDetails] = useState({
+        name: user?.name || "Guest",
+        email: user?.email || "guest@example.com",
+        address: "Flat 402, Lotus Apartment, Gandhi Chowk, Hajipur, Bihar - 844101"
+    });
+    const [tempDetails, setTempDetails] = useState({ ...deliveryDetails });
 
-  // --- HANDLERS ---
-  const openEditModal = () => {
-    setTempDetails({ ...deliveryDetails });
-    setIsModalOpen(true);
-  };
+    // --- CALCULATIONS ---
+    const deliveryFee = 40;
+    const platformFee = 10;
+    const gstAmount = Math.round(itemTotal * 0.05);
+    const discountAmount = itemTotal > 500 ? 50 : 0;
+    const totalAmount = itemTotal + deliveryFee + platformFee + gstAmount - discountAmount;
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setTempDetails(prev => ({ ...prev, [name]: value }));
-  };
-
-  const saveAddress = () => {
-    setDeliveryDetails({ ...tempDetails });
-    setIsModalOpen(false);
-  };
-
-  // --- CART LOGIC ---
-  const cartItems = state?.cartItems || [];
-  const restaurantName = state?.restaurantName || "Restaurant";
-  const itemTotal = state?.totalPrice || 0;
-
-  const deliveryFee = 40;
-  const platformFee = 10;
-  const grandTotal = itemTotal + deliveryFee + platformFee;
-
-  // --- 🔥 LOGIC UPDATE: Save to Database (MongoDB) ---
-  const handlePlaceOrder = async () => {
-    setLoading(true);
-
-    // 1. Prepare Order Data with User Email
-    const orderData = {
-        userEmail: user?.email || "guest@example.com", // CRITICAL: This connects the order to your account
-        restaurant: restaurantName,
-        items: cartItems,
-        totalAmount: grandTotal,
-        deliveryAddress: deliveryDetails,
-        status: "Confirmed" 
+    // --- HANDLERS ---
+    const openEditModal = () => {
+        setTempDetails({ ...deliveryDetails });
+        setIsModalOpen(true);
     };
 
-    try {
-        // 2. Send Data to Server (Change localhost to IP if using real phone)
-        const response = await fetch("https://somato-new.vercel.app/api/orders", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(orderData),
-        });
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setTempDetails(prev => ({ ...prev, [name]: value }));
+    };
 
-        if (response.ok) {
-            // 3. Show Success Animation
-            setIsOrderPlaced(true);
-            setTimeout(() => {
-                navigate("/order-success");
-            }, 2000);
-        } else {
-            alert("Failed to place order on server.");
+    const saveAddress = () => {
+        setDeliveryDetails({ ...tempDetails });
+        setIsModalOpen(false);
+    };
+
+    const handlePlaceOrder = async () => {
+        setLoading(true);
+        const orderData = {
+            userEmail: user?.email || "guest@example.com",
+            restaurant: restaurantName,
+            items: cartItems,
+            totalAmount: totalAmount,
+            deliveryAddress: deliveryDetails,
+            status: "Confirmed",
+            date: new Date()
+        };
+
+        const backendUrl = window.location.hostname === "localhost"
+            ? "http://localhost:4000/api/orders"
+            : "https://somato-new.vercel.app/api/orders";
+
+        try {
+            const response = await fetch(backendUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(orderData),
+            });
+
+            if (response.ok) {
+                setIsOrderPlaced(true);
+                setTimeout(() => {
+                    navigate("/order-success");
+                }, 4000);
+            } else {
+                alert("Failed to place order.");
+            }
+        } catch (error) {
+            console.error("Order Error:", error);
+            alert("Server not responding.");
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Order Error:", error);
-        alert("Server not responding. Is your backend running?");
-    } finally {
-        setLoading(false);
-    }
-  };
+    };
 
-  // --- EMPTY CART STATE ---
-  if (cartItems.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-transparent">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 animate-fade-in-up">Your Cart is Empty 😕</h2>
-        <Link to="/delivery" className="bg-[#EF4F5F] text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-red-600 transition animate-fade-in-up delay-100">
-          Browse Restaurants
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-transparent pt-10 pb-20 px-4 animate-fade-in">
-      
-      {/* --- SUCCESS MODAL --- */}
-      {isOrderPlaced && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-           <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform scale-100 transition-transform animate-fade-in-up">
-               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                   <span className="text-4xl text-green-600">✓</span>
-               </div>
-               <h2 className="text-2xl font-bold text-gray-800 mb-2">Order Placed!</h2>
-               <p className="text-gray-500 mb-6">Your food is being prepared at <span className="font-bold">{restaurantName}</span>.</p>
-               <p className="text-sm text-gray-400">Redirecting...</p>
-           </div>
-        </div>
-      )}
-
-      {/* --- EDIT ADDRESS MODAL --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
-                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <h3 className="font-bold text-lg text-gray-800">Edit Delivery Details</h3>
-                    <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors">&times;</button>
-                </div>
-                <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input type="text" name="name" value={tempDetails.name} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" name="email" value={tempDetails.email} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <textarea name="address" rows="3" value={tempDetails.address} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg p-3 transition-all duration-300 focus:outline-none focus:border-[#EF4F5F] focus:ring-4 focus:ring-red-50 bg-gray-50 focus:bg-white resize-none" />
-                    </div>
-                </div>
-                <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
-                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition">Cancel</button>
-                    <button onClick={saveAddress} className="px-6 py-2 bg-[#EF4F5F] text-white font-bold rounded-lg hover:bg-red-600 shadow-md transition hover:-translate-y-0.5">Save Changes</button>
-                </div>
-            </div>
-        </div>
-      )}
-
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        
-        {/* LEFT COLUMN */}
-        <div className="md:col-span-2 space-y-6">
-           {/* Order Summary Card */}
-           <div className="glass-card p-6 rounded-2xl shadow-sm border border-white/50 animate-fade-in-up delay-100">
-               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                 <span className="text-[#EF4F5F]">🥡</span> Order Summary
-               </h2>
-               <p className="text-sm text-gray-500 mb-6 uppercase tracking-wider font-semibold">From {restaurantName}</p>
-               {cartItems.map((item, index) => (
-                   <div key={index} className="flex justify-between items-center mb-4 border-b border-gray-200/60 pb-4 last:border-0 last:pb-0">
-                       <div className="flex items-center gap-3">
-                           <div className={`w-4 h-4 border flex items-center justify-center rounded-sm ${item.isVeg ? "border-green-600" : "border-red-600"}`}>
-                               <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`}></div>
-                           </div>
-                           <div>
-                               <h3 className="text-gray-800 font-medium">{item.name}</h3>
-                               <p className="text-xs text-gray-400">₹{item.price}</p>
-                           </div>
-                       </div>
-                       <span className="text-gray-700 font-medium">₹{item.price}</span>
-                   </div>
-               ))}
-           </div>
-
-           {/* Address Card */}
-           <div className="glass-card p-6 rounded-2xl shadow-sm border border-white/50 animate-fade-in-up delay-200 group hover:border-red-200 transition-colors duration-300">
-               <h2 className="text-xl font-bold text-gray-800 mb-4">📍 Delivery Address</h2>
-               <div className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl bg-white/50 group-hover:bg-white group-hover:shadow-md transition-all duration-300">
-                   <div className="text-2xl">🏠</div>
-                   <div>
-                       <h3 className="font-bold text-gray-800">{deliveryDetails.name}</h3>
-                       <p className="text-sm text-gray-500 leading-relaxed">{deliveryDetails.email}</p>
-                       <p className="text-sm text-gray-500 leading-relaxed mt-1">{deliveryDetails.address}</p>
-                   </div>
-                   <button onClick={openEditModal} className="ml-auto text-[#EF4F5F] font-bold text-sm uppercase hover:underline">Change</button>
-               </div>
-           </div>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="md:col-span-1">
-            {/* Bill Details */}
-            <div className="glass-card p-6 rounded-2xl shadow-lg border border-white/50 sticky top-24 animate-fade-in-up delay-300">
-                <h2 className="text-lg font-bold text-gray-800 mb-6">Bill Details</h2>
-                <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-gray-600"><span>Item Total</span><span>₹{itemTotal}</span></div>
-                    <div className="flex justify-between text-gray-600"><span>Delivery Fee</span><span>₹{deliveryFee}</span></div>
-                    <div className="flex justify-between text-gray-600"><span>Platform Fee</span><span>₹{platformFee}</span></div>
-                </div>
-                <div className="border-t border-gray-200 pt-4 mb-6 flex justify-between text-gray-800 font-bold text-xl">
-                    <span>TO PAY</span>
-                    <span>₹{grandTotal}</span>
-                </div>
-                <button 
-                  onClick={handlePlaceOrder}
-                  disabled={loading}
-                  className="w-full bg-[#EF4F5F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-200 hover:-translate-y-1 active:translate-y-0 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+    if (cartItems.length === 0) {
+        return (
+            <div className="min-h-screen w-full flex flex-col justify-center items-center bg-gradient-to-br from-[#fff5f7] via-[#fff0f5] to-[#f3e8ff]">
+                <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }} 
+                    className="bg-white p-8 rounded-3xl shadow-xl text-center border border-white"
                 >
-                  {loading ? "Processing..." : "Place Order ➔"}
-                </button>
+                    <div className="text-5xl mb-4">🥡</div>
+                    <h2 className="text-xl font-bold text-slate-800">Cart is Empty</h2>
+                    <p className="text-slate-500 mb-6 text-sm">Add some delicious food first!</p>
+                    <Link to="/delivery" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-md block">
+                        Browse Food
+                    </Link>
+                </motion.div>
             </div>
-        </div>
+        );
+    }
 
-      </div>
-    </div>
-  );
+    return (
+        <div className="min-h-screen w-full bg-[#e3c2e0] relative font-sans pt-4">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none"></div>
+            {/* 1. ANIMATED BACKGROUND ELEMENTS (Restored) */}
+            {[...Array(6)].map((_, i) => (
+                <motion.div
+                    key={i}
+                    animate={{
+                        y: [0, -50, 0],
+                        x: [0, 30, 0],
+                        rotate: [0, 360],
+                        scale: [1, 1.1, 1],
+                    }}
+                    transition={{ duration: 20 + i * 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute rounded-full blur-3xl opacity-10"
+                    style={{
+                        width: `${100 + i * 40}px`,
+                        height: `${100 + i * 40}px`,
+                        background: `linear-gradient(135deg, ${['#ec4899', '#8b5cf6', '#f97316', '#06b6d4', '#f43f5e', '#a855f7'][i]}, white)`,
+                        top: `${15 + i * 15}%`,
+                        left: `${10 + i * 15}%`,
+                    }}
+                />
+            ))}
+
+            <div className="max-w-6xl mx-auto px-4 py-8 relative z-10">
+                
+                {/* 2. HEADER SECTION */}
+                <motion.div 
+                    initial={{ y: -20, opacity: 0 }} 
+                    animate={{ y: 0, opacity: 1 }} 
+                    className="flex items-center justify-between mb-8"
+                >
+                    <div className="flex items-center gap-4">
+                        <motion.button 
+                            whileHover={{ scale: 1.1 }} 
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => navigate(-1)} 
+                            className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md border border-purple-100"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-purple-700" />
+                        </motion.button>
+                        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Checkout</h1>
+                    </div>
+                </motion.div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        
+                        {/* 3. ORDER SUMMARY CARD */}
+                        <motion.div 
+                            initial={{ x: -50, opacity: 0 }} 
+                            animate={{ x: 0, opacity: 1 }}
+                            className="bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/50 -translate-y-1"
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center text-white">
+                                    <ShoppingBag size={20} />
+                                </div>
+                                {/* UPDATED SECTION: ADDED ITEM COUNT BELOW TITLE */}
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-800 leading-none">Your Order</h2>
+                                    <p className="text-sm text-slate-500 font-medium mt-1">{totalItems} items in cart</p>
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                {cartItems.map((item, index) => (
+                                    <motion.div 
+                                        key={index} 
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        whileHover={{ x: 5 }}
+                                        className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-4 h-4 border rounded flex items-center justify-center ${item.isVeg ? "border-green-600" : "border-red-600"}`}>
+                                                <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-green-600" : "bg-red-600"}`} />
+                                            </div>
+                                            <span className="text-sm font-semibold text-slate-700">{item.name}</span>
+                                        </div>
+                                        <span className="font-bold text-slate-800">₹{item.price}</span>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* 4. DELIVERY ADDRESS CARD */}
+                        <motion.div 
+                            initial={{ x: -50, opacity: 0 }} 
+                            animate={{ x: 0, opacity: 1 }} 
+                            transition={{ delay: 0.1 }}
+                            className="bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/50 -translate-y-1"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white">
+                                        <MapPin size={20} />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-slate-800">Delivery Address</h2>
+                                </div>
+                                <motion.button 
+                                    whileHover={{ scale: 1.05 }} 
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={openEditModal} 
+                                    className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg"
+                                >
+                                    CHANGE
+                                </motion.button>
+                            </div>
+                            <motion.div 
+                                whileHover={{ y: -2 }}
+                                className="bg-white p-4 rounded-2xl border border-gray-50 shadow-sm flex gap-4"
+                            >
+                                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-purple-400 rounded-xl flex items-center justify-center text-white font-bold shadow-md">{deliveryDetails.name.charAt(0)}</div>
+                                <div className="text-sm">
+                                    <h3 className="font-bold text-slate-800">{deliveryDetails.name}</h3>
+                                    <p className="text-slate-500">{deliveryDetails.email}</p>
+                                    <p className="text-slate-600 mt-1">{deliveryDetails.address}</p>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    </div>
+
+                    {/* RIGHT COLUMN: BILL SUMMARY */}
+                    <div className="lg:col-span-1">
+                        <motion.div 
+                            initial={{ x: 50, opacity: 0 }} 
+                            animate={{ x: 0, opacity: 1 }} 
+                            transition={{ delay: 0.2 }}
+                            className="sticky top-24 bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/50 space-y-4 -translate-y-1"
+                        >
+                            <h2 className="text-xl font-bold text-slate-800 mb-4">Bill Summary</h2>
+                            <div className="space-y-2.5">
+                                {[
+                                    { label: 'Item Total', val: itemTotal, icon: ShoppingBag, color: 'text-pink-500' },
+                                    { label: 'Delivery Fee', val: deliveryFee, icon: TrendingUp, color: 'text-blue-500' },
+                                    { label: 'Platform Fee', val: platformFee, icon: Zap, color: 'text-amber-500' },
+                                    { label: 'GST (5%)', val: gstAmount, icon: Star, color: 'text-purple-500' }
+                                ].map((item, idx) => (
+                                    <motion.div 
+                                        key={idx} 
+                                        whileHover={{ x: 5 }}
+                                        className="bg-white p-3.5 rounded-xl shadow-md border border-gray-50 flex justify-between items-center"
+                                    >
+                                        <span className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                                            <item.icon size={14} className={item.color} /> {item.label}
+                                        </span>
+                                        <span className="text-sm font-bold text-slate-800">₹{item.val}</span>
+                                    </motion.div>
+                                ))}
+
+                                {/* ALWAYS VISIBLE DISCOUNT SECTION */}
+                                <motion.div 
+                                    whileHover={{ x: 5 }}
+                                    className={`p-3.5 rounded-xl shadow-md flex justify-between items-center transition-colors ${discountAmount > 0 ? 'bg-green-50 border border-green-100 text-green-700' : 'bg-white border border-gray-50 text-slate-400'}`}
+                                >
+                                    <span className="text-xs font-bold flex items-center gap-2">
+                                        <Gift size={14} /> Discount
+                                    </span>
+                                    <span className="text-sm font-bold">{discountAmount > 0 ? `-₹${discountAmount}` : '₹0'}</span>
+                                </motion.div>
+                            </div>
+
+                            <div className="pt-4 border-t border-dashed border-gray-200 mt-4 flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-500 uppercase tracking-tighter">Total Amount</span>
+                                <div className="text-right">
+                                    <motion.span 
+                                        animate={{ scale: [1, 1.05, 1] }} 
+                                        transition={{ repeat: Infinity, duration: 2 }} 
+                                        className="text-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent block"
+                                    >
+                                        ₹{totalAmount}
+                                    </motion.span>
+                                    <p className="text-[10px] text-slate-400 font-bold leading-none">Inclusive of all taxes</p>
+                                </div>
+                            </div>
+
+                            {/* ANIMATED BUTTON */}
+                            <motion.button 
+                                whileHover={{ scale: 1.02 }} 
+                                whileTap={{ scale: 0.98 }} 
+                                onClick={handlePlaceOrder} 
+                                disabled={loading} 
+                                className="w-full py-4 mt-4 bg-gradient-to-r from-[#a832f0] to-[#f00b51] text-white rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 relative overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500" />
+                                {loading ? (
+                                    "Processing..."
+                                ) : (
+                                    <>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" fill="white" fillOpacity="0.8"/>
+                                            <circle cx="18" cy="6" r="2" fill="white" fillOpacity="0.8"/>
+                                            <circle cx="6" cy="18" r="1.5" fill="white" fillOpacity="0.8"/>
+                                        </svg>
+                                        Place Order →
+                                    </>
+                                )}
+                            </motion.button>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+
+            {/* CELEBRATION MODAL */}
+            <AnimatePresence>
+                {isOrderPlaced && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-gradient-to-br from-purple-900/50 via-pink-900/50 to-rose-900/50 backdrop-blur-md flex items-center justify-center overflow-hidden"
+                    >
+                        {/* Confetti Animation */}
+                        {[...Array(50)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ y: 0, x: 0, opacity: 1, scale: 1 }}
+                                animate={{
+                                    y: [0, -300, -600],
+                                    x: [0, Math.random() * 400 - 200, Math.random() * 600 - 300],
+                                    rotate: [0, Math.random() * 720],
+                                    opacity: [1, 1, 0],
+                                    scale: [1, 1.5, 0.5]
+                                }}
+                                transition={{
+                                    duration: 3,
+                                    delay: Math.random() * 0.8,
+                                    ease: "easeOut"
+                                }}
+                                className="absolute bottom-0 left-1/2"
+                                style={{
+                                    width: `${10 + Math.random() * 10}px`,
+                                    height: `${10 + Math.random() * 10}px`,
+                                    background: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'][Math.floor(Math.random() * 7)],
+                                    borderRadius: Math.random() > 0.5 ? '50%' : '0%'
+                                }}
+                            />
+                        ))}
+
+                        {/* Fireworks Animation */}
+                        {[...Array(8)].map((_, i) => (
+                            <motion.div
+                                key={`firework-${i}`}
+                                initial={{ scale: 0, opacity: 1 }}
+                                animate={{
+                                    scale: [0, 2, 3],
+                                    opacity: [1, 0.5, 0]
+                                }}
+                                transition={{
+                                    duration: 2,
+                                    delay: 0.5 + i * 0.2,
+                                    ease: "easeOut"
+                                }}
+                                className="absolute border-4 rounded-full"
+                                style={{
+                                    top: `${30 + Math.random() * 40}%`,
+                                    left: `${20 + Math.random() * 60}%`,
+                                    width: '100px',
+                                    height: '100px',
+                                    borderColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'][Math.floor(Math.random() * 7)],
+                                }}
+                            />
+                        ))}
+
+                        {/* Success Card */}
+                        <motion.div 
+                            initial={{ scale: 0, rotate: -180 }} 
+                            animate={{ scale: 1, rotate: 0 }} 
+                            transition={{ type: "spring", stiffness: 150, damping: 15 }}
+                            className="bg-white rounded-3xl p-16 max-w-lg mx-4 relative overflow-hidden text-center shadow-2xl"
+                        >
+                            {/* Animated BG Inside Card */}
+                            <motion.div 
+                                animate={{ background: [
+                                    'radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
+                                    'radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 70%)'
+                                ] }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                                className="absolute inset-0"
+                            />
+
+                            <div className="relative z-10">
+                                {/* Success Icon Layers */}
+                                <div className="relative w-32 h-32 mx-auto mb-8">
+                                    {[0, 1, 2, 3].map((i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ scale: 1, opacity: 0.5 }}
+                                            animate={{ scale: [1, 2.5, 4], opacity: [0.5, 0.2, 0] }}
+                                            transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
+                                            className="absolute inset-0 border-4 border-green-500 rounded-full"
+                                        />
+                                    ))}
+                                    <motion.div 
+                                        initial={{ scale: 0 }} 
+                                        animate={{ scale: 1 }} 
+                                        transition={{ delay: 0.5, type: "spring" }}
+                                        className="relative w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-xl"
+                                    >
+                                        <CheckCircle className="w-16 h-16 text-white" />
+                                    </motion.div>
+                                </div>
+
+                                <motion.h2 
+                                    animate={{ scale: [1, 1.05, 1] }} 
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="text-4xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent font-bold mb-4"
+                                >
+                                    Order Placed! 🎉
+                                </motion.h2>
+                                <p className="text-slate-600 text-lg mb-8">Your feast is being prepared at <br/> <span className="font-bold text-purple-600">{restaurantName}</span></p>
+
+                                {/* Progress Bar */}
+                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
+                                    <motion.div 
+                                        initial={{ width: 0 }} 
+                                        animate={{ width: "100%" }} 
+                                        transition={{ duration: 3.5, ease: "easeInOut" }} 
+                                        className="h-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600" 
+                                    />
+                                </div>
+                                <p className="text-sm text-slate-400 animate-pulse uppercase tracking-widest font-bold">Redirecting...</p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* EDIT MODAL */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }} 
+                        className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-lg flex items-center justify-center p-4"
+                    >
+                        <motion.div 
+                            initial={{ y: 50, scale: 0.9 }} 
+                            animate={{ y: 0, scale: 1 }} 
+                            exit={{ y: 50, scale: 0.9 }}
+                            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8"
+                        >
+                            <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Update Details</h3>
+                            <div className="space-y-4">
+                                <input type="text" name="name" value={tempDetails.name} onChange={handleInputChange} className="w-full bg-slate-50 border border-gray-100 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Name" />
+                                <textarea rows="3" name="address" value={tempDetails.address} onChange={handleInputChange} className="w-full bg-slate-50 border border-gray-100 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none" placeholder="Address" />
+                            </div>
+                            <div className="flex gap-3 mt-8">
+                                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-400 text-sm hover:bg-slate-50">CANCEL</button>
+                                <button onClick={saveAddress} className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-sm shadow-md transition-transform active:scale-95">SAVE CHANGES</button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 };
 
 export default Checkout;
