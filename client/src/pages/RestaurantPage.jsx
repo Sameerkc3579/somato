@@ -33,7 +33,7 @@ const RestaurantPage = ({ city = "Hajipur" }) => {
     { name: "Amit Kumar", rating: "5.0", date: "1 month ago", text: "Best pizza in " + city + "! The crust was perfect.", initial: "A", color: "bg-green-500" },
     { name: "Sneha Roy", rating: "3.5", date: "2 months ago", text: "Delivery was a bit late, but food was hot.", initial: "S", color: "bg-red-500" }
   ];
-
+  
   // --- Initialize Reviews from Local Storage ---
   const [reviews, setReviews] = useState(() => {
     const savedReviews = localStorage.getItem("restaurantReviews");

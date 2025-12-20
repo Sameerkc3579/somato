@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, Check } from 'lucide-react';
 import RestaurantCard from "../components/RestaurantCard"; 
 import TabOptions from "../components/TabOptions";
 
-// --- 50 UNIQUE REAL NIGHTLIFE IMAGES ---
+// --- NIGHTLIFE DATA ---
 const nightlifeData = [
   { name: "Lord of the Drinks", cuisine: "Lounge, North Indian", image: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80" },
   { name: "Tamasha", cuisine: "Pub, Continental", image: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&q=80" },
@@ -73,24 +73,49 @@ const fullNightlifeList = nightlifeData.map((item, index) => ({
 
 const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
-const FilterButton = ({ icon: Icon, text, hasDropdown, active, onClick }) => (
-  <button onClick={onClick} className={`flex items-center gap-2 px-4 py-2 bg-white border ${active ? 'border-[#EF4F5F] bg-red-50 text-[#EF4F5F]' : 'border-gray-300 text-gray-500'} rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all`}>
-    {Icon && <Icon className="w-4 h-4" />} {text} {hasDropdown && <ChevronDown className="w-4 h-4" />}
+// 🔥 1. Define Filterable Bar Types
+const BAR_TYPES = ["Pub", "Club", "Lounge", "Bar", "Microbrewery", "Cafe", "Wine Bar", "Jazz Bar"];
+
+const FilterButton = ({ icon: Icon, text, hasDropdown, active, onClick, badgeCount }) => (
+  <button 
+    onClick={onClick} 
+    className={`flex items-center gap-2 px-4 py-2 bg-white border ${active ? 'border-[#EF4F5F] bg-red-50 text-[#EF4F5F]' : 'border-gray-300 text-gray-500'} rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all`}
+  >
+    {Icon && <Icon className="w-4 h-4" />} 
+    {text} 
+    {badgeCount > 0 && <span className="bg-[#EF4F5F] text-white text-[10px] px-1.5 py-0.5 rounded-full">{badgeCount}</span>}
+    {hasDropdown && <ChevronDown className="w-4 h-4" />}
   </button>
 );
 
 const Nightlife = ({ city }) => { 
+    // 🔥 2. State for Filters & Bar Types
     const [activeFilters, setActiveFilters] = useState([]);
+    const [activeBarTypes, setActiveBarTypes] = useState([]);
+    const [isBarTypeDropdownOpen, setIsBarTypeDropdownOpen] = useState(false);
+
     const [infiniteList, setInfiniteList] = useState([]);
     const loaderRef = useRef(null);
     
+    // 🔥 3. Filter Logic (Checks "cuisine" string for bar type keywords)
     const filteredList = useMemo(() => fullNightlifeList.filter(spot => { 
+        // Standard Filters
         if (activeFilters.includes("cocktails") && !spot.servesCocktails) return false;
         if (activeFilters.includes("liveMusic") && !spot.hasLiveMusic) return false;
         if (activeFilters.includes("outdoorBar") && !spot.hasOutdoor) return false;
         if (activeFilters.includes("happyHour") && !spot.hasHappyHour) return false;
+        
+        // Bar Type Filter
+        if (activeBarTypes.length > 0) {
+            // e.g., spot.cuisine might be "Pub, Continental"
+            const hasMatch = activeBarTypes.some(type => 
+                spot.cuisine.toLowerCase().includes(type.toLowerCase())
+            );
+            if (!hasMatch) return false;
+        }
+
         return true;
-    }), [activeFilters]);
+    }), [activeFilters, activeBarTypes]);
 
     useEffect(() => { setInfiniteList(filteredList.slice(0, 9)); }, [filteredList]);
 
@@ -106,30 +131,91 @@ const Nightlife = ({ city }) => {
     }, [filteredList]); 
 
     const toggleFilter = (f) => setActiveFilters(prev => prev.includes(f) ? prev.filter(i => i !== f) : [...prev, f]);
+    
+    const toggleBarType = (type) => {
+        setActiveBarTypes(prev => prev.includes(type) ? prev.filter(i => i !== type) : [...prev, type]);
+    };
 
     return (
-        // Added overflow-x-hidden to correct mobile layout
         <div className="min-h-screen bg-gray-50/30 pb-20 w-full overflow-x-hidden">
             <TabOptions activeTab="Nightlife" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="py-4 mb-6">
+                
+                {/* 🔥 4. Invisible Backdrop */}
+                {isBarTypeDropdownOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => setIsBarTypeDropdownOpen(false)}></div>
+                )}
+
+                <div className="py-4 mb-6 relative z-50">
                     <h1 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">Nightlife in <span className="font-bold text-[#EF4F5F]">{city || "Hajipur"}</span></h1>
+                    
                     <div className="flex flex-wrap gap-3">
                         <FilterButton icon={SlidersHorizontal} text="Filters" />
                         <FilterButton text="Serves Cocktails" active={activeFilters.includes("cocktails")} onClick={() => toggleFilter("cocktails")} />
                         <FilterButton text="Live Music" active={activeFilters.includes("liveMusic")} onClick={() => toggleFilter("liveMusic")} />
                         <FilterButton text="Outdoor Bar" active={activeFilters.includes("outdoorBar")} onClick={() => toggleFilter("outdoorBar")} />
                         <FilterButton text="Happy Hour" active={activeFilters.includes("happyHour")} onClick={() => toggleFilter("happyHour")} />
-                        <FilterButton text="Bar Type" hasDropdown />
+                        
+                        {/* 🔥 5. Bar Type Dropdown Container */}
+                        <div className="relative">
+                            <FilterButton 
+                                text="Bar Type" 
+                                hasDropdown 
+                                active={activeBarTypes.length > 0}
+                                badgeCount={activeBarTypes.length}
+                                onClick={() => setIsBarTypeDropdownOpen(!isBarTypeDropdownOpen)} 
+                            />
+                            
+                            {/* Dropdown Menu */}
+                            {isBarTypeDropdownOpen && (
+                                <div className="absolute top-12 left-0 bg-white border border-gray-100 shadow-xl rounded-xl p-4 w-64 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-sm font-bold text-gray-700">Select Type</span>
+                                        {activeBarTypes.length > 0 && (
+                                            <button onClick={() => setActiveBarTypes([])} className="text-xs text-[#EF4F5F] font-bold hover:underline">Clear</button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="max-h-64 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                                        {BAR_TYPES.map((type) => (
+                                            <div 
+                                                key={type} 
+                                                onClick={() => toggleBarType(type)}
+                                                className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${activeBarTypes.includes(type) ? "bg-[#EF4F5F] border-[#EF4F5F]" : "border-gray-300"}`}>
+                                                        {activeBarTypes.includes(type) && <Check className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                    <span className={`text-sm ${activeBarTypes.includes(type) ? "text-gray-800 font-medium" : "text-gray-500"}`}>{type}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {infiniteList.map((spot, index) => (
-                        <RestaurantCard key={`${spot.id}-${index}`} info={spot} currentCity={city} />
-                    ))}
-                    <div ref={loaderRef} className="col-span-1 md:col-span-2 lg:col-span-3 h-20 flex justify-center items-center">
-                         <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
-                    </div>
+                    {filteredList.length > 0 ? (
+                        infiniteList.map((spot, index) => (
+                            <RestaurantCard key={`${spot.id}-${index}`} info={spot} currentCity={city} />
+                        ))
+                    ) : (
+                        <div className="col-span-full py-20 text-center text-gray-500">
+                            <div className="text-4xl mb-4">🥂</div>
+                            <p>No nightlife spots match your filters.</p>
+                            <button onClick={() => {setActiveFilters([]); setActiveBarTypes([]);}} className="mt-4 text-[#EF4F5F] font-bold hover:underline">Clear all filters</button>
+                        </div>
+                    )}
+                    
+                    {filteredList.length > 0 && (
+                        <div ref={loaderRef} className="col-span-1 md:col-span-2 lg:col-span-3 h-20 flex justify-center items-center">
+                             <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

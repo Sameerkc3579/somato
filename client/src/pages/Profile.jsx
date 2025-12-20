@@ -105,7 +105,7 @@ const Profile = () => {
     if (!user) return <div className="min-h-screen flex justify-center items-center">Please Log In</div>;
 
     return (
-        <div className="min-h-screen w-full bg-[#f6dcf4] relative pt-4 overflow-x-hidden">
+        <div className="min-h-screen w-full bg-[#f1ddf1] relative pt-4 overflow-x-hidden">
             
             {trackingOrder && (
                 <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} 

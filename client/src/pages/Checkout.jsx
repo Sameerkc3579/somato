@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion"; 
-import { ArrowLeft, ShoppingBag, MapPin, CheckCircle, Sparkles, Star, Zap, Gift, TrendingUp } from 'lucide-react';
+// 🔥 1. Added Trash2 icon here
+import { ArrowLeft, ShoppingBag, MapPin, CheckCircle, Sparkles, Star, Zap, Gift, TrendingUp, Trash2 } from 'lucide-react';
 
 const Checkout = () => {
     const { state } = useLocation();
@@ -14,10 +15,13 @@ const Checkout = () => {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // --- DATA ---
-    const cartItems = state?.cartItems || [];
+    // --- DATA (UPDATED) ---
+    // 🔥 2. Changed to useState so we can remove items
+    const [cartItems, setCartItems] = useState(state?.cartItems || []);
     const restaurantName = state?.restaurantName || "Restaurant";
-    const itemTotal = state?.totalPrice || 0;
+
+    // 🔥 3. Dynamic Calculation (updates when item is removed)
+    const itemTotal = cartItems.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
     const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
     const [deliveryDetails, setDeliveryDetails] = useState({
@@ -35,6 +39,13 @@ const Checkout = () => {
     const totalAmount = itemTotal + deliveryFee + platformFee + gstAmount - discountAmount;
 
     // --- HANDLERS ---
+    
+    // 🔥 4. New Remove Handler
+    const handleRemoveItem = (indexToRemove) => {
+        const newItems = cartItems.filter((_, index) => index !== indexToRemove);
+        setCartItems(newItems);
+    };
+
     const openEditModal = () => {
         setTempDetails({ ...deliveryDetails });
         setIsModalOpen(true);
@@ -109,7 +120,7 @@ const Checkout = () => {
     }
 
     return (
-        <div className="min-h-screen w-full bg-[#f6dcf4] overflow-x-hidden relative pt-4">
+        <div className="min-h-screen w-full bg-[#f1edf1] overflow-x-hidden relative pt-4">
 
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {/* 1. ANIMATED BACKGROUND ELEMENTS (Restored) */}
@@ -158,7 +169,6 @@ const Checkout = () => {
                 <div className="flex flex-col lg:flex-row gap-6 w-full max-w-full">
                     <div className="flex-1 min-w-0 w-full space-y-6 overflow-hidden">
 
-                        
                         {/* 3. ORDER SUMMARY CARD */}
                         <motion.div 
                             initial={{ x: -50, opacity: 0 }} 
@@ -169,20 +179,22 @@ const Checkout = () => {
                                 <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center text-white">
                                     <ShoppingBag size={20} />
                                 </div>
-                                {/* UPDATED SECTION: ADDED ITEM COUNT BELOW TITLE */}
                                 <div>
                                     <h2 className="text-xl font-bold text-slate-800 leading-none">Your Order</h2>
                                     <p className="text-sm text-slate-500 font-medium mt-1">{totalItems} items in cart</p>
                                 </div>
                             </div>
+                            
+                            {/* 🔥 5. Updated List with Remove Button */}
                             <div className="space-y-3">
+                                <AnimatePresence>
                                 {cartItems.map((item, index) => (
                                     <motion.div 
                                         key={index} 
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                                         transition={{ delay: index * 0.1 }}
-                                        whileHover={{ x: 5 }}
                                         className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100"
                                     >
                                         <div className="flex items-center gap-3">
@@ -191,9 +203,19 @@ const Checkout = () => {
                                             </div>
                                             <span className="text-sm font-semibold text-slate-700">{item.name}</span>
                                         </div>
-                                        <span className="font-bold text-slate-800">₹{item.price}</span>
+                                        
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-slate-800">₹{item.price}</span>
+                                            <button 
+                                                onClick={() => handleRemoveItem(index)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-[#EF4F5F] hover:bg-[#EF4F5F] hover:text-white transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </motion.div>
                                 ))}
+                                </AnimatePresence>
                             </div>
                         </motion.div>
 
@@ -278,6 +300,7 @@ const Checkout = () => {
                                 <span className="text-sm font-bold text-slate-500 uppercase tracking-tighter">Total Amount</span>
                                 <div className="text-right">
                                     <motion.span 
+                                        key={totalAmount}
                                         animate={{ scale: [1, 1.05, 1] }} 
                                         transition={{ repeat: Infinity, duration: 2 }} 
                                         className="text-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent block"
@@ -331,7 +354,7 @@ const Checkout = () => {
                                 initial={{ y: 0, x: 0, opacity: 1, scale: 1 }}
                                 animate={{
                                     y: [0, -300, -600],
-                                    x: [0, Math.random() * 400 - 200, Math.random() * 400 - 200],
+                                    x: [0, Math.random() * 400 - 200, Math.random() * 600 - 300],
                                     rotate: [0, Math.random() * 720],
                                     opacity: [1, 1, 0],
                                     scale: [1, 1.5, 0.5]
@@ -347,31 +370,6 @@ const Checkout = () => {
                                     height: `${10 + Math.random() * 10}px`,
                                     background: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'][Math.floor(Math.random() * 7)],
                                     borderRadius: Math.random() > 0.5 ? '50%' : '0%'
-                                }}
-                            />
-                        ))}
-
-                        {/* Fireworks Animation */}
-                        {[...Array(8)].map((_, i) => (
-                            <motion.div
-                                key={`firework-${i}`}
-                                initial={{ scale: 0, opacity: 1 }}
-                                animate={{
-                                    scale: [0, 2, 3],
-                                    opacity: [1, 0.5, 0]
-                                }}
-                                transition={{
-                                    duration: 2,
-                                    delay: 0.5 + i * 0.2,
-                                    ease: "easeOut"
-                                }}
-                                className="absolute border-4 rounded-full"
-                                style={{
-                                    top: `${30 + Math.random() * 40}%`,
-                                    left: `${20 + Math.random() * 60}%`,
-                                    width: '100px',
-                                    height: '100px',
-                                    borderColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'][Math.floor(Math.random() * 7)],
                                 }}
                             />
                         ))}
@@ -452,7 +450,7 @@ const Checkout = () => {
                         <motion.div 
                             initial={{ y: 50, scale: 0.9 }} 
                             animate={{ y: 0, scale: 1 }} 
-                            exit={{ y: 50, scale: 0.9 }}
+                            exit={{ y: 50, scale: 0.9 }} 
                             className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8"
                         >
                             <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Update Details</h3>

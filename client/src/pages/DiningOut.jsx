@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, Check } from 'lucide-react';
 import RestaurantCard from "../components/RestaurantCard"; 
 import TabOptions from "../components/TabOptions";
 
+// --- DINING DATA ---
 const diningData = [
   { name: "Barbeque Nation", cuisine: "BBQ, North Indian", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80" },
   { name: "Mainland China", cuisine: "Chinese, Asian", image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&q=80" },
@@ -72,24 +73,53 @@ const fullDiningList = diningData.map((item, index) => ({
 
 const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
 
-const FilterButton = ({ icon: Icon, text, hasDropdown, active, onClick }) => (
-  <button onClick={onClick} className={`flex items-center gap-2 px-4 py-2 bg-white border ${active ? 'border-[#EF4F5F] bg-red-50 text-[#EF4F5F]' : 'border-gray-300 text-gray-500'} rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all`}>
-    {Icon && <Icon className="w-4 h-4" />} {text} {hasDropdown && <ChevronDown className="w-4 h-4" />}
+// 🔥 1. Define Filterable Cuisines
+const CUISINE_OPTIONS = [
+    "North Indian", "Chinese", "Italian", "Continental", "Mughlai", "BBQ",
+    "Japanese", "Thai", "Asian", "Modern Indian", "South Indian", "Mediterranean", 
+    "European", "American", "Mexican", "Cafe", "Bakery"
+];
+
+// Reusable Filter Button Component
+const FilterButton = ({ icon: Icon, text, hasDropdown, active, onClick, badgeCount }) => (
+  <button 
+    onClick={onClick} 
+    className={`flex items-center gap-2 px-4 py-2 bg-white border ${active ? 'border-[#EF4F5F] bg-red-50 text-[#EF4F5F]' : 'border-gray-300 text-gray-500'} rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm transition-all`}
+  >
+    {Icon && <Icon className="w-4 h-4" />} 
+    {text} 
+    {badgeCount > 0 && <span className="bg-[#EF4F5F] text-white text-[10px] px-1.5 py-0.5 rounded-full">{badgeCount}</span>}
+    {hasDropdown && <ChevronDown className="w-4 h-4" />}
   </button>
 );
 
 const DiningOut = ({ city }) => { 
+    // 🔥 2. Add State for Filters
     const [activeFilters, setActiveFilters] = useState([]);
+    const [activeCuisines, setActiveCuisines] = useState([]);
+    const [isCuisineDropdownOpen, setIsCuisineDropdownOpen] = useState(false);
+
     const [infiniteList, setInfiniteList] = useState([]);
     const loaderRef = useRef(null);
     
+    // 🔥 3. Filter Logic
     const filteredList = useMemo(() => fullDiningList.filter(r => { 
+        // Standard Filters
         if (activeFilters.includes("tableBooking") && !r.hasBooking) return false;
         if (activeFilters.includes("outdoorSeating") && !r.hasOutdoor) return false;
         if (activeFilters.includes("buffet") && !r.servesBuffet) return false;
         if (activeFilters.includes("pureVeg") && !r.isDiningVeg) return false;
+        
+        // Cuisine Filter
+        if (activeCuisines.length > 0) {
+            const hasMatch = activeCuisines.some(selectedCuisine => 
+                r.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase())
+            );
+            if (!hasMatch) return false;
+        }
+
         return true;
-    }), [activeFilters]);
+    }), [activeFilters, activeCuisines]);
 
     useEffect(() => { setInfiniteList(filteredList.slice(0, 9)); }, [filteredList]);
 
@@ -104,31 +134,92 @@ const DiningOut = ({ city }) => {
         return () => { if (loaderRef.current) observer.unobserve(loaderRef.current); };
     }, [filteredList]); 
 
+    // Helpers
     const toggleFilter = (f) => setActiveFilters(prev => prev.includes(f) ? prev.filter(i => i !== f) : [...prev, f]);
+    const toggleCuisine = (c) => {
+        setActiveCuisines(prev => prev.includes(c) ? prev.filter(i => i !== c) : [...prev, c]);
+    };
 
     return (
-        // Added overflow-x-hidden to correct mobile layout
         <div className="min-h-screen bg-gray-50/30 pb-20 w-full overflow-x-hidden">
             <TabOptions activeTab="Dining Out" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="py-4 mb-6">
+                
+                {/* 🔥 4. Invisible Backdrop to Close Dropdown */}
+                {isCuisineDropdownOpen && (
+                    <div className="fixed inset-0 z-40" onClick={() => setIsCuisineDropdownOpen(false)}></div>
+                )}
+
+                <div className="py-4 mb-6 relative z-50">
                     <h1 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-6">Dining Out Restaurants in <span className="font-bold text-[#EF4F5F]">{city || "Hajipur"}</span></h1>
+                    
                     <div className="flex flex-wrap gap-3">
                         <FilterButton icon={SlidersHorizontal} text="Filters" />
                         <FilterButton text="Table Booking" active={activeFilters.includes("tableBooking")} onClick={() => toggleFilter("tableBooking")} />
                         <FilterButton text="Outdoor Seating" active={activeFilters.includes("outdoorSeating")} onClick={() => toggleFilter("outdoorSeating")} />
                         <FilterButton text="Serves Buffet" active={activeFilters.includes("buffet")} onClick={() => toggleFilter("buffet")} />
                         <FilterButton text="Pure Veg" active={activeFilters.includes("pureVeg")} onClick={() => toggleFilter("pureVeg")} />
-                        <FilterButton text="Cuisines" hasDropdown />
+                        
+                        {/* 🔥 5. Cuisines Dropdown Container */}
+                        <div className="relative">
+                            <FilterButton 
+                                text="Cuisines" 
+                                hasDropdown 
+                                active={activeCuisines.length > 0}
+                                badgeCount={activeCuisines.length}
+                                onClick={() => setIsCuisineDropdownOpen(!isCuisineDropdownOpen)} 
+                            />
+                            
+                            {/* Dropdown Menu */}
+                            {isCuisineDropdownOpen && (
+                                <div className="absolute top-12 left-0 bg-white border border-gray-100 shadow-xl rounded-xl p-4 w-64 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-sm font-bold text-gray-700">Select Cuisines</span>
+                                        {activeCuisines.length > 0 && (
+                                            <button onClick={() => setActiveCuisines([])} className="text-xs text-[#EF4F5F] font-bold hover:underline">Clear</button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="max-h-64 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                                        {CUISINE_OPTIONS.map((cuisine) => (
+                                            <div 
+                                                key={cuisine} 
+                                                onClick={() => toggleCuisine(cuisine)}
+                                                className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${activeCuisines.includes(cuisine) ? "bg-[#EF4F5F] border-[#EF4F5F]" : "border-gray-300"}`}>
+                                                        {activeCuisines.includes(cuisine) && <Check className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                    <span className={`text-sm ${activeCuisines.includes(cuisine) ? "text-gray-800 font-medium" : "text-gray-500"}`}>{cuisine}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {infiniteList.map((restaurant, index) => (
-                        <RestaurantCard key={`${restaurant.id}-${index}`} info={restaurant} currentCity={city} />
-                    ))}
-                    <div ref={loaderRef} className="col-span-1 md:col-span-2 lg:col-span-3 h-20 flex justify-center items-center">
-                         <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
-                    </div>
+                    {filteredList.length > 0 ? (
+                        infiniteList.map((restaurant, index) => (
+                            <RestaurantCard key={`${restaurant.id}-${index}`} info={restaurant} currentCity={city} />
+                        ))
+                    ) : (
+                        <div className="col-span-full py-20 text-center text-gray-500">
+                            <div className="text-4xl mb-4">🍽️</div>
+                            <p>No restaurants match your filters.</p>
+                            <button onClick={() => {setActiveFilters([]); setActiveCuisines([]);}} className="mt-4 text-[#EF4F5F] font-bold hover:underline">Clear all filters</button>
+                        </div>
+                    )}
+                    
+                    {filteredList.length > 0 && (
+                        <div ref={loaderRef} className="col-span-1 md:col-span-2 lg:col-span-3 h-20 flex justify-center items-center">
+                             <div className="w-8 h-8 border-4 border-gray-200 border-t-[#EF4F5F] rounded-full animate-spin"></div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
