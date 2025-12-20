@@ -40,7 +40,7 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
 
   const handleLogout = () => {
     logout();
-    setUser(null);
+    // setUser(null); // logout() inside context usually handles this, but keeping it is fine
     setIsProfileOpen(false);
     navigate("/login");
   };
@@ -50,14 +50,14 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="h-[72px] flex items-center justify-between gap-2 md:gap-6">
 
-          {/* 1. LOGO (Shrinks slightly on mobile to make room) */}
-          <Link to="/home" className="flex-shrink-0">
+          {/* 1. LOGO */}
+          <Link to="/" className="flex-shrink-0">
             <h1 className="text-3xl font-extrabold italic text-[#EF4F5F] tracking-lighter">
               somato
             </h1>
           </Link>
 
-          {/* 2. SEARCH BAR & CITY (Visible on Mobile now - replaces Name space) */}
+          {/* 2. SEARCH BAR & CITY */}
           <div className="flex-1 flex items-center bg-[#F8FAFC] border border-[#E8E8E8] rounded-lg px-2 py-1.5 md:px-4 md:py-2 gap-2 shadow-sm max-w-[65%] md:max-w-[520px]">
             
             {/* Location Selector */}
@@ -72,7 +72,6 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              {/* Caret icon hidden on very small screens to save space */}
               <FaCaretDown className="hidden md:block text-xs text-gray-400" />
             </div>
 
@@ -89,21 +88,24 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
             </form>
           </div>
 
-          {/* 3. USER PROFILE SECTION (Replaces Hamburger Menu on Mobile) */}
+          {/* 3. USER PROFILE SECTION */}
           <div className="flex items-center">
             {user ? (
               <div className="relative">
-                {/* Avatar Circle (Initials) - Click to toggle dropdown */}
+                {/* Avatar Circle */}
                 <div 
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2 cursor-pointer select-none"
                 >
-                  {/* The Circle Avatar */}
                   <div className="w-8 h-8 md:w-10 md:h-10 bg-[#EF4F5F] text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold shadow-md hover:bg-[#e03e4e] transition-colors border-2 border-white">
-                    {getInitials(user.name)}
+                    {user.image ? (
+                        <img src={user.image} alt="User" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                        getInitials(user.name)
+                    )}
                   </div>
 
-                  {/* Name Text (Visible ONLY on Desktop, Hidden on Mobile) */}
+                  {/* Name Text (Desktop) */}
                   <div className="hidden md:flex items-center gap-1 text-gray-700 font-medium text-sm">
                     {user.name}
                     <FaCaretDown className={`transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} />
@@ -113,7 +115,6 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
                 {/* Dropdown Menu */}
                 {isProfileOpen && (
                   <div className="absolute right-0 top-12 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                    {/* User Info Header in Dropdown (Mobile mostly) */}
                     <div className="px-4 py-2 border-b border-gray-100 md:hidden">
                         <p className="text-sm font-bold text-gray-800 truncate">{user.name}</p>
                         <p className="text-xs text-gray-500">View account</p>
@@ -139,10 +140,22 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
                 )}
               </div>
             ) : (
-              // Login/Signup Links (Condensed on mobile)
-              <div className="flex gap-2 md:gap-4 text-[#696969] text-sm md:text-lg font-light">
-                <Link to="/login" className="hover:text-[#EF4F5F]">Log in</Link>
-                <Link to="/signup" className="hidden md:block hover:text-[#EF4F5F]">Sign up</Link>
+              // --- 🔥 FIXED LOGIN/SIGNUP LINKS ---
+              <div className="flex gap-3 md:gap-5 text-[#696969] text-sm md:text-lg font-light items-center">
+                <Link 
+                    to="/login" 
+                    state={{ mode: "login" }}
+                    className="hover:text-[#EF4F5F] transition-colors"
+                >
+                    Log in
+                </Link>
+                <Link 
+                    to="/login" 
+                    state={{ mode: "signup" }}
+                    className="hidden md:block hover:text-[#EF4F5F] transition-colors"
+                >
+                    Sign up
+                </Link>
               </div>
             )}
           </div>

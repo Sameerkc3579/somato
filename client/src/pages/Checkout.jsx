@@ -109,8 +109,9 @@ const Checkout = () => {
     }
 
     return (
-        <div className="min-h-screen w-full bg-[#e3c2e0] relative font-sans pt-4">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none"></div>
+        <div className="min-h-screen w-full bg-[#f6dcf4] overflow-x-hidden relative pt-4">
+
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {/* 1. ANIMATED BACKGROUND ELEMENTS (Restored) */}
             {[...Array(6)].map((_, i) => (
                 <motion.div
@@ -132,8 +133,8 @@ const Checkout = () => {
                     }}
                 />
             ))}
-
-            <div className="max-w-6xl mx-auto px-4 py-8 relative z-10">
+            </div>
+            <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
                 
                 {/* 2. HEADER SECTION */}
                 <motion.div 
@@ -154,8 +155,9 @@ const Checkout = () => {
                     </div>
                 </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
+                <div className="flex flex-col lg:flex-row gap-6 w-full max-w-full">
+                    <div className="flex-1 min-w-0 w-full space-y-6 overflow-hidden">
+
                         
                         {/* 3. ORDER SUMMARY CARD */}
                         <motion.div 
@@ -233,12 +235,12 @@ const Checkout = () => {
                     </div>
 
                     {/* RIGHT COLUMN: BILL SUMMARY */}
-                    <div className="lg:col-span-1">
+                    <div className="w-full lg:w-[400px] lg:flex-shrink-0">
                         <motion.div 
                             initial={{ x: 50, opacity: 0 }} 
                             animate={{ x: 0, opacity: 1 }} 
                             transition={{ delay: 0.2 }}
-                            className="sticky top-24 bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/50 space-y-4 -translate-y-1"
+                            className="relative lg:sticky lg:top-24 bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/50 space-y-4 -translate-y-1"
                         >
                             <h2 className="text-xl font-bold text-slate-800 mb-4">Bill Summary</h2>
                             <div className="space-y-2.5">
@@ -329,7 +331,7 @@ const Checkout = () => {
                                 initial={{ y: 0, x: 0, opacity: 1, scale: 1 }}
                                 animate={{
                                     y: [0, -300, -600],
-                                    x: [0, Math.random() * 400 - 200, Math.random() * 600 - 300],
+                                    x: [0, Math.random() * 400 - 200, Math.random() * 400 - 200],
                                     rotate: [0, Math.random() * 720],
                                     opacity: [1, 1, 0],
                                     scale: [1, 1.5, 0.5]
@@ -339,7 +341,7 @@ const Checkout = () => {
                                     delay: Math.random() * 0.8,
                                     ease: "easeOut"
                                 }}
-                                className="absolute bottom-0 left-1/2"
+                                className="absolute bottom-0 left-1/2 -translate-x-1/2"
                                 style={{
                                     width: `${10 + Math.random() * 10}px`,
                                     height: `${10 + Math.random() * 10}px`,
@@ -379,7 +381,7 @@ const Checkout = () => {
                             initial={{ scale: 0, rotate: -180 }} 
                             animate={{ scale: 1, rotate: 0 }} 
                             transition={{ type: "spring", stiffness: 150, damping: 15 }}
-                            className="bg-white rounded-3xl p-16 max-w-lg mx-4 relative overflow-hidden text-center shadow-2xl"
+                            className="bg-white rounded-3xl p-6 sm:p-10 max-w-[90vw] sm:max-w-lg mx-4"
                         >
                             {/* Animated BG Inside Card */}
                             <motion.div 

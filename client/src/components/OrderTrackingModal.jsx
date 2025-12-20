@@ -11,6 +11,13 @@ const OrderTrackingModal = ({ order, onClose }) => {
   const [currentStep, setCurrentStep] = useState(isAlreadyDelivered ? 3 : 0);
   const [showConfetti, setShowConfetti] = useState(isAlreadyDelivered);
 
+  useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
+
   // 2. REALISTIC ANIMATION LOOP (Only runs if NOT delivered yet)
   useEffect(() => {
     if (!isAlreadyDelivered && currentStep < 3) {
@@ -29,7 +36,7 @@ const OrderTrackingModal = ({ order, onClose }) => {
   const bikeProgress = [5, 33, 66, 92]; 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex justify-center items-end md:items-center">
       
       {/* 🎊 Confetti Animation (Overlay) */}
       {showConfetti && (
@@ -49,13 +56,14 @@ const OrderTrackingModal = ({ order, onClose }) => {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[600px] relative">
+      <div className=" bg-white w-full md:max-w-5xl h-[92vh] md:h-[600px] rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col md:flex-row relative">
+
         
         {/* Mobile Close Button */}
         <button onClick={onClose} className="absolute top-4 right-4 z-30 md:hidden bg-white rounded-full p-2 shadow-lg font-bold text-gray-600 hover:bg-gray-100">&times;</button>
 
         {/* --- LEFT SIDE: INTERACTIVE MAP --- */}
-        <div className="w-full md:w-2/3 bg-gray-100 relative flex flex-col">
+        <div className="w-full md:w-2/3 bg-gray-100 relative flex flex-col min-h-[45vh] md:min-h-0">
             
             {/* Live Status Overlay */}
             <div className="absolute top-6 left-6 z-20 bg-white/95 backdrop-blur-md px-5 py-3 rounded-xl shadow-lg border border-gray-100 max-w-xs transition-all duration-500 hover:scale-105">
@@ -163,13 +171,16 @@ const OrderTrackingModal = ({ order, onClose }) => {
         </div>
 
         {/* --- RIGHT SIDE: ORDER RECEIPT --- */}
-        <div className="w-full md:w-1/3 bg-white border-l border-gray-200 flex flex-col h-full z-20 shadow-[-5px_0_15px_-5px_rgba(0,0,0,0.1)]">
+        <div className="w-full md:w-1/3 bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col max-h-[40vh] md:max-h-none z-20">
+
+
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 hidden md:flex">
                 <h3 className="font-extrabold text-gray-800 text-lg tracking-tight">Order Summary</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-red-500 text-2xl font-bold transition-transform hover:rotate-90">&times;</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
+
                 
                 {/* Restaurant Header */}
                 <div className="flex items-start gap-4">
@@ -234,7 +245,7 @@ const OrderTrackingModal = ({ order, onClose }) => {
       <style>{`
         @keyframes fall {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+            100% { transform: translateY(120%) rotate(720deg); opacity: 0; }
         }
         .animate-fall {
             animation-name: fall;

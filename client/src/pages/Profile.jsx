@@ -105,16 +105,16 @@ const Profile = () => {
     if (!user) return <div className="min-h-screen flex justify-center items-center">Please Log In</div>;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] pt-24 pb-12 px-4 font-sans">
+        <div className="min-h-screen w-full bg-[#f6dcf4] relative pt-4 overflow-x-hidden">
             
             {trackingOrder && (
-                <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
+                <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} 
+                />
             )}
-
-            <div className="max-w-5xl mx-auto space-y-8">
+            <div className="max-w-5xl mx-auto px-4 space-y-4 md:space-y-8 overflow-hidden">
                 
                 {/* --- HEADER --- */}
-                <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-start gap-8">
+                <div className="bg-white rounded-[2rem] p-5 md:p-8 ... flex flex-col lg:flex-row overflow-hidden">
                     {/* Avatar */}
                     <div className="w-32 h-32 bg-[#5826bf] rounded-[2rem] flex items-center justify-center text-white text-5xl font-bold flex-shrink-0 shadow-lg overflow-hidden">
                         {user.image ? <img src={user.image} className="w-full h-full object-cover" /> : user.name.charAt(0)}
@@ -132,7 +132,7 @@ const Profile = () => {
                     </div>
 
                     {/* Stats (Orders & Favorites Only) */}
-                    <div className="flex gap-3">
+                    <div className="flex justify-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
                         <div className="w-24 h-24 bg-[#3b82f6] rounded-2xl flex flex-col justify-center items-center text-white shadow-lg shadow-blue-100">
                             <Package size={20} className="mb-1 opacity-80" />
                             <span className="text-[10px] font-bold uppercase opacity-80">Orders</span>
@@ -212,7 +212,7 @@ const Profile = () => {
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: "auto", opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
-                                            className="overflow-hidden mt-4 pt-4 border-t border-slate-100 bg-slate-50/50 -mx-6 px-6 pb-4"
+                                            className="overflow-hidden mt-4 pt-4 border-t border-slate-100 bg-slate-50/50 px-4 md:px-6 pb-4"
                                         >
                                             <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Order Summary</h4>
                                             {order.items.map((item, idx) => (

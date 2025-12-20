@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart } from "lucide-react"; 
 import { useAuth } from "../context/AuthContext";
 
 const RestaurantCard = ({ info, currentCity }) => {
-  const { user } = useAuth();
+  const { user } = useAuth(); 
   const [isLiked, setIsLiked] = useState(false);
 
   if (!info) return null;
@@ -23,53 +23,57 @@ const RestaurantCard = ({ info, currentCity }) => {
 
   const restaurantId = id || _id;
 
-  // --- 1. CHECK DATABASE ON LOAD (Keeps the heart Red if liked) ---
+  // --- 1. DETERMINE BACKEND URL AUTOMATICALLY ---
+  // If you are on localhost:5173, it uses localhost:4000
+  // If you are on Vercel, it uses the live backend
+  const getBaseUrl = () => {
+      return window.location.hostname === "localhost" 
+          ? "http://localhost:4000" 
+          : "https://somato-new.vercel.app";
+  };
+
+  // --- 2. CHECK DATABASE ON LOAD ---
+  // This ensures the heart stays RED if you already liked it
   useEffect(() => {
-    const checkFavoriteStatus = async () => {
+    const checkStatus = async () => {
       if (!user?.email) return;
-
       try {
-        const baseUrl = window.location.hostname === "localhost" 
-            ? "http://localhost:4000" 
-            : "https://somato-new.vercel.app";
-
-        const response = await fetch(`${baseUrl}/api/favorites?email=${user.email}`);
+        const response = await fetch(`${getBaseUrl()}/api/favorites?email=${user.email}`);
         if (response.ok) {
           const favorites = await response.json();
-          // Check if THIS restaurant is already in the list
-          const isFav = favorites.some(fav => fav.restaurantName === name);
-          setIsLiked(isFav);
+          // Check if THIS restaurant is in the favorites list
+          const found = favorites.some(fav => fav.restaurantName === name);
+          setIsLiked(found);
         }
       } catch (error) {
-        console.error("Error checking favorite:", error);
+        console.error("Failed to check favorite status", error);
       }
     };
-
-    checkFavoriteStatus();
+    checkStatus();
   }, [user, name]);
 
-  // --- 2. TOGGLE FAVORITE (Save to DB) ---
+  // --- 3. TOGGLE FAVORITE (CLICK HANDLER) ---
   const toggleFavorite = async (e) => {
-    e.preventDefault(); // Stop link click
-    e.stopPropagation();
+    e.preventDefault(); // Stop the card from opening the restaurant page
+    e.stopPropagation(); 
 
     if (!user) {
       alert("Please login to save favorites!");
       return;
     }
 
-    // Optimistic UI Update (Turn Red/White immediately)
+    // 1. Optimistic Update (Turn it Red/White immediately)
     const previousState = isLiked;
     setIsLiked(!isLiked);
 
     try {
-      const baseUrl = window.location.hostname === "localhost" 
-          ? "http://localhost:4000" 
-          : "https://somato-new.vercel.app";
+      const baseUrl = getBaseUrl();
+      let response;
 
       if (!previousState) {
         // --- ADD TO FAVORITES ---
-        const res = await fetch(`${baseUrl}/api/favorites/add`, {
+        console.log("Adding to favorites:", name);
+        response = await fetch(`${baseUrl}/api/favorites/add`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -81,22 +85,28 @@ const RestaurantCard = ({ info, currentCity }) => {
             time: deliveryTime
           })
         });
-        if(res.ok) console.log("Added to Favorites");
       } else {
         // --- REMOVE FROM FAVORITES ---
-        const res = await fetch(`${baseUrl}/api/favorites/remove`, {
-          method: "POST",
+        console.log("Removing from favorites:", name);
+        response = await fetch(`${baseUrl}/api/favorites/remove`, {
+          method: "POST", // Using POST for remove by name logic
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: user.email,
             restaurantName: name
           })
         });
-        if(res.ok) console.log("Removed from Favorites");
       }
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Request failed");
+      }
+
     } catch (error) {
-      console.error("Network Error:", error);
-      setIsLiked(previousState); // Revert UI if failed
+      console.error("Favorite Error:", error);
+      alert(`Error: ${error.message}`); // Tell the user what went wrong
+      setIsLiked(previousState); // Revert the heart color if it failed
     }
   };
 
