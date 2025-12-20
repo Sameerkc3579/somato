@@ -196,8 +196,7 @@ const RestaurantPage = ({ city = "Hajipur" }) => {
   const currentMenu = menuItems[selectedCategory] || [];
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] flex flex-col relative pb-20">
-      
+    <div className="min-h-screen bg-[#FDFBF7] flex flex-col relative pb-20 overflow-x-hidden">      
       {/* ================= HERO SECTION ================= */}
       <div className="relative h-[360px] w-full bg-gray-900">
         <motion.div 
@@ -217,7 +216,7 @@ const RestaurantPage = ({ city = "Hajipur" }) => {
         <div className="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-8">
           
           {/* Top Nav */}
-          <div className="absolute top-6 left-4 sm:left-8 flex justify-between w-full pr-8 sm:pr-16">
+          <div className="absolute top-6 inset-x-4 sm:inset-x-8 flex justify-between">
              <motion.button 
                whileHover={{ scale: 1.1 }}
                whileTap={{ scale: 0.95 }}
@@ -538,7 +537,7 @@ const RestaurantPage = ({ city = "Hajipur" }) => {
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           onClick={handleProceedToCheckout}
-          className="fixed bottom-4 right-4 bg-[#24963F] text-white px-6 py-3 rounded-full font-bold text-lg shadow-2xl z-[5000] flex items-center gap-2 hover:bg-[#1e7e34] transition-colors"
+          className="fixed bottom-4 right-4 max-w-[calc(100vw-2rem)] bg-[#24963F] text-white px-6 py-3 rounded-full font-bold text-lg shadow-2xl z-[5000] flex items-center gap-2 hover:bg-[#1e7e34] transition-colors"
         >
           <ShoppingCart className="w-6 h-6" />
           Checkout ({getTotalItems()})
