@@ -11,12 +11,15 @@ export default function LandingPage({ onGetStarted }) {
   const y2 = useTransform(scrollY, [0, 300], [0, -100]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+useEffect(() => {
+    // Optimization: Only add listener if window width is > 768px (Desktop)
+    if (window.innerWidth > 768) {
+      const handleMouseMove = (e) => {
+        setMousePosition({ x: e.clientX, y: e.clientY });
+      };
+      window.addEventListener('mousemove', handleMouseMove);
+      return () => window.removeEventListener('mousemove', handleMouseMove);
+    }
   }, []);
 
   const floatingCards = [
@@ -66,7 +69,7 @@ export default function LandingPage({ onGetStarted }) {
       
       {/* Cursor Follower Glow */}
       <motion.div
-        className="fixed w-96 h-96 rounded-full pointer-events-none z-50 mix-blend-screen"
+        className="hidden md:block fixed w-96 h-96 rounded-full pointer-events-none z-50 mix-blend-screen"
         style={{
           background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)',
           left: mousePosition.x - 192,
@@ -76,7 +79,7 @@ export default function LandingPage({ onGetStarted }) {
       />
 
       {/* Floating Gradient Blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="hidden md:block fixed inset-0 pointer-events-none overflow-hidden">
         <motion.div
           animate={{
             x: [0, 100, -50, 0],
