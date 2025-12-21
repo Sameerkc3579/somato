@@ -51,7 +51,7 @@ const Navbar = ({ setSearchTerm, city, setCity }) => {
         <div className="h-[72px] flex items-center justify-between gap-2 md:gap-6">
 
           {/* 1. LOGO */}
-          <Link to="/" className="flex-shrink-0">
+          <Link to="/home" className="flex-shrink-0">
             <h1 className="text-3xl font-extrabold italic text-[#EF4F5F] tracking-lighter">
               somato
             </h1>
