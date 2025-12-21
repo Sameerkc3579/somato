@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom"; // 1. Added useNavigate
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom"; 
 
 // --- CONTEXT ---
 import { AuthProvider } from "./context/AuthContext"; 
@@ -10,7 +10,7 @@ import Footer from "./components/Footer";
 import MainLayout from "./components/MainLayout"; 
 
 // --- PAGES ---
-import LandingPage from "./pages/LandingPage"; // 2. Import Landing Page
+import LandingPage from "./pages/LandingPage"; 
 import Home from "./pages/Home";
 import Delivery from "./pages/Delivery";
 import DiningOut from "./pages/DiningOut"; 
@@ -37,19 +37,19 @@ const App = () => {
   }, [city]);
 
   const location = useLocation();
-  const navigate = useNavigate(); // 3. Hook for navigation
+  const navigate = useNavigate(); 
 
-  // 4. Handler for Landing Page "Explore" button
+  // Handler for Landing Page "Explore" button
   const handleGetStarted = () => {
-    navigate('/home'); // Moves user from Landing Page -> Home Page
+    navigate('/home'); 
   };
 
   // Logic to hide Navbar (Hidden on Landing Page "/" and Home Page "/home")
   const isNavbarHidden = location.pathname === "/home" || location.pathname === "/";
 
-  // Logic to hide Global Footer (Hidden ONLY on Landing Page "/")
-  // Because Landing Page already has its own footer in the design
-  const isLandingPage = location.pathname === "/";
+  // 🔥 FIX: Logic to hide Global Footer
+  // Hide on Landing Page ("/") AND Home Page ("/home") because they have their own internal footers
+  const isFooterHidden = location.pathname === "/" || location.pathname === "/home";
 
   return (
     <AuthProvider> 
@@ -64,7 +64,6 @@ const App = () => {
       )}
 
       <Routes>
-        {/* 5. Root Route is now Landing Page (was previously Navigate) */}
         <Route path="/" element={<LandingPage onGetStarted={handleGetStarted} />} />
         
         <Route path="/admin/users" element={<AdminUsers />} />
@@ -87,8 +86,8 @@ const App = () => {
         <Route path="/collections/:type" element={<Collection />} />
       </Routes>
       
-      {/* 6. Footer shows on all pages EXCEPT Landing Page */}
-      {!isLandingPage && <Footer />}
+      {/* 🔥 FIX: Footer shows on pages EXCEPT Landing Page & Home Page */}
+      {!isFooterHidden && <Footer />}
       
     </AuthProvider>
   );
