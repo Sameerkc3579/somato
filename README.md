@@ -23,6 +23,4 @@ A full-stack food delivery application inspired by Zomato. This project allows u
 ```bash
 git clone [https://github.com/Sameerkc3579/somato.git](https://github.com/Sameerkc3579/somato.git)
 cd somato
-<img width="1919" height="1079" alt="Screenshot 2026-01-07 013427" src="https://github.com/user-attachments/assets/7e5992ca-59fc-4c64-b54d-35cf78e8451e" />
-<img width="1919" height="1079" alt="Screenshot 2026-01-07 013634" src="https://github.com/user-attachments/assets/f9f567ae-ad02-4b8b-9306-dbe422f5d298" />
-<img width="1919" height="1079" alt="Screenshot 2026-01-07 013750" src="https://github.com/user-attachments/assets/1ef3342e-b0de-4792-9c4e-e629aea77a65" />
+<img width="1919" height="1079" alt="Screenshot 2026-01-07 013427" src="https://github.com/user-attachments/assets/a9c8d5c1-4872-42f3-be41-bd32ec8cf57f" />
